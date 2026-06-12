@@ -1,18 +1,10 @@
-\# Säde v1
-
-
+# Säde v1
 
 Paikallinen kehitysympäristö, muistipesä ja AI-avustajaprojektin runko.
 
+## Tavoite
 
-
-Tavoite:
-
-\- järjestetty projektikansio
-
-\- muistojen ja tekstien säilytys
-
-\- turvallinen kehitysympäristö
-
-\- myöhemmin paikallinen AI-agenttirunko
-
+- järjestetty projektikansio
+- muistojen ja tekstien säilytys
+- turvallinen kehitysympäristö
+- myöhemmin paikallinen AI-agenttirunko
