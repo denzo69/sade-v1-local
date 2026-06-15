@@ -9,6 +9,14 @@ import urllib.request
 import urllib.error
 import shutil
 
+from app.semantic_memory import (
+    add_text_to_semantic_memory,
+    format_semantic_context,
+    rebuild_semantic_memory_index,
+    search_semantic_memory,
+    semantic_memory_status,
+)
+
 
 app = FastAPI(title="Säde v1")
 
@@ -58,6 +66,8 @@ class ConfigUpdateRequest(BaseModel):
     num_ctx: Optional[int] = None
     memory_context_chars: Optional[int] = None
     chat_context_chars: Optional[int] = None
+    semantic_context_chars: Optional[int] = None
+    semantic_search_results: Optional[int] = None
 
 def load_config():
     default_config = {
@@ -67,6 +77,8 @@ def load_config():
         "num_ctx": 8192,
         "memory_context_chars": 6000,
         "chat_context_chars": 4000,
+        "semantic_context_chars": 3500,
+        "semantic_search_results": 5,
 	"export_path": "D:/Sade_Exports",
     	"backup_path": "D:/Sade_Backups"
     }
@@ -113,6 +125,16 @@ def save_config_updates(updates: ConfigUpdateRequest):
         if updates.chat_context_chars < 500:
             raise HTTPException(status_code=400, detail="chat_context_chars pitää olla vähintään 500.")
         config["chat_context_chars"] = updates.chat_context_chars
+
+    if updates.semantic_context_chars is not None:
+        if updates.semantic_context_chars < 500:
+            raise HTTPException(status_code=400, detail="semantic_context_chars pitää olla vähintään 500.")
+        config["semantic_context_chars"] = updates.semantic_context_chars
+
+    if updates.semantic_search_results is not None:
+        if updates.semantic_search_results < 1 or updates.semantic_search_results > 20:
+            raise HTTPException(status_code=400, detail="semantic_search_results pitää olla välillä 1–20.")
+        config["semantic_search_results"] = updates.semantic_search_results
 
     CONFIG_PATH.write_text(
         json.dumps(config, ensure_ascii=False, indent=2),
@@ -205,12 +227,22 @@ def append_markdown_entry(path: Path, entry: MemoryEntry):
     with LOG_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
 
+    semantic_result = add_text_to_semantic_memory(
+        PROJECT_PATH,
+        entry.text,
+        title=title,
+        source=path.name,
+        tags=entry.tags or [],
+        timestamp=timestamp
+    )
+
     return {
         "ok": True,
         "message": "Muisto tallennettu.",
         "title": title,
         "path": str(path),
-        "time": timestamp
+        "time": timestamp,
+        "semantic_memory": semantic_result
     }
 
 
@@ -268,6 +300,19 @@ def get_chat_context(max_chars: Optional[int] = None) -> str:
         return content
 
     return content[-max_chars:]
+
+
+def get_semantic_context(query: str) -> str:
+    config = load_config()
+
+    max_chars = int(config.get("semantic_context_chars", 3500))
+    n_results = int(config.get("semantic_search_results", 5))
+
+    try:
+        result = search_semantic_memory(PROJECT_PATH, query, n_results=n_results)
+        return format_semantic_context(result, max_chars=max_chars)
+    except Exception:
+        return ""
 
 
 def extract_memory_command(message: str) -> Optional[str]:
@@ -343,11 +388,15 @@ def ask_ollama(prompt: str) -> str:
 
 def build_sade_prompt(user_message: str) -> str:
     system_prompt = get_system_prompt()
+    semantic_context = get_semantic_context(user_message)
     memory_context = get_memory_context()
     chat_context = get_chat_context()
 
     return f"""
 {system_prompt}
+
+Semanttinen muistihaku, merkityksen perusteella löydetyt muistot:
+{semantic_context}
 
 Pitkäaikainen muisti, Säde-muisti:
 {memory_context}
@@ -551,6 +600,9 @@ def root():
             "/memory/visible-chat",
             "/memory/chatlog",
             "/memory/search",
+            "/memory/semantic/search",
+            "/memory/semantic/rebuild",
+            "/semantic/status",
             "/export",
 	    "/backup",
             "/docs"
@@ -635,7 +687,9 @@ def get_config():
         "temperature": config.get("temperature", 0.7),
         "num_ctx": config.get("num_ctx", 8192),
         "memory_context_chars": config.get("memory_context_chars", 6000),
-        "chat_context_chars": config.get("chat_context_chars", 4000)
+        "chat_context_chars": config.get("chat_context_chars", 4000),
+        "semantic_context_chars": config.get("semantic_context_chars", 3500),
+        "semantic_search_results": config.get("semantic_search_results", 5)
     }
 
 @app.post("/config")
@@ -699,6 +753,7 @@ def system_status():
         "sade_memory": file_info(SADE_MEMORY_PATH),
         "chat_log": file_info(CHAT_LOG_PATH),
         "memory_log": file_info(LOG_PATH),
+        "semantic_memory": semantic_memory_status(PROJECT_PATH),
         "system_prompt": file_info(SYSTEM_PROMPT_PATH),
         "config": file_info(CONFIG_PATH),
         "backup_path": dir_info(backup_path),
@@ -761,6 +816,35 @@ def search_memory(request: MemorySearchRequest):
         raise HTTPException(status_code=400, detail="Hakusana ei saa olla tyhjä.")
 
     return search_sade_memory(request.query)
+
+@app.get("/semantic/status")
+def get_semantic_memory_status():
+    return semantic_memory_status(PROJECT_PATH)
+
+
+@app.post("/memory/semantic/rebuild")
+def rebuild_semantic_memory():
+    return rebuild_semantic_memory_index(PROJECT_PATH)
+
+
+@app.post("/memory/semantic/search")
+def search_semantic_memory_post(request: MemorySearchRequest):
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="Hakusana ei saa olla tyhjä.")
+
+    config = load_config()
+    n_results = int(config.get("semantic_search_results", 5))
+
+    return search_semantic_memory(PROJECT_PATH, request.query, n_results=n_results)
+
+
+@app.get("/memory/semantic/search")
+def search_semantic_memory_get(q: str, n: int = 5):
+    if not q.strip():
+        raise HTTPException(status_code=400, detail="Hakusana ei saa olla tyhjä.")
+
+    return search_semantic_memory(PROJECT_PATH, q, n_results=n)
+
 
 @app.get("/system-prompt")
 def get_system_prompt_file():

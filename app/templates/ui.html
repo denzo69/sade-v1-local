@@ -356,7 +356,7 @@ async function sendChat() {
             ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean)
             : [];
 
-        const response = await fetch("/memory/sade_memory", {
+        const response = await fetch("/memory/sade-memory", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -380,7 +380,7 @@ async function sendChat() {
     }
 
     async function loadMemory() {
-    const response = await fetch("/memory/sade_memory");
+    const response = await fetch("/memory/sade-memory");
     const data = await response.json();
 
     if (data.ok) {
@@ -712,4 +712,5 @@ window.addEventListener("DOMContentLoaded", function () {
 </script>
 </body>
 </html>
+
 

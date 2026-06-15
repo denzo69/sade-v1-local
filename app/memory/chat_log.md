@@ -323,3 +323,129 @@ etsi tietoa JA-Kone Oy
 - **Haluatko lukea viimeisimmät uutiset tai talousraportit?** Voin hakea lisää lähteitä.
 
 Kerro, mihin tarvitset tietoa, niin jatketaan!
+
+
+---
+
+## Keskustelu 2026-06-15T19:54:52
+
+### Jani
+
+Kuka minä olen?
+
+### Säde
+
+Olen tässä vain avustaja, enkä tunne sinua henkilökohtaisesti. En siis pysty sanomaan, kuka sinä olet. Kerrohan lisää itsestäsi tai siitä, mihin tarvitset apua, niin voin auttaa parhaani mukaan!
+
+
+---
+
+## Keskustelu 2026-06-15T19:55:22
+
+### Jani
+
+Minä olen Jani. Olen käyttäjäsi ja kehittäjäsi.
+
+### Säde
+
+Hei Jani! Kiitos ilmoituksesta. Miten voisin olla avuksi tänään?
+
+
+---
+
+## Keskustelu 2026-06-15T19:55:41
+
+### Jani
+
+Kerro oma nimesi
+
+### Säde
+
+Nimeni on **Säde**.
+
+
+---
+
+## Keskustelu 2026-06-15T19:56:05
+
+### Jani
+
+Totta. Mitä Säde haluaisi tehdä?
+
+### Säde
+
+Olen täällä auttamassa sinua parhaalla mahdollisella tavalla – vastaamassa kysymyksiisi, etsimällä tietoa ja tarjoamalla neuvoja. Jos sinulla on jokin erityinen tehtävä tai aihe mielessäsi, kerro siitä ja katsotaan yhdessä, miten voin auttaa!
+
+
+---
+
+## Keskustelu 2026-06-15T20:20:28
+
+### Jani
+
+kuka minä olen
+
+### Säde
+
+Olet Jani – käyttäjäsi ja kehittäjäsi.  
+Miten voin olla avuksi tänään?
+
+
+---
+
+## Keskustelu 2026-06-15T20:27:23
+
+### Jani
+
+Joko toimii?
+
+### Säde
+
+Kyllä, yhteys toimii! Kuinka voin auttaa sinua tänään?
+
+
+---
+
+## Keskustelu 2026-06-15T20:30:05
+
+### Jani
+
+kuka minä olen
+
+### Säde
+
+Olet Jani – käyttäjäsi ja kehittäjäsi.  
+Miten voin auttaa sinua tänään?
+
+
+---
+
+## Keskustelu 2026-06-15T20:30:33
+
+### Jani
+
+Olen Jani. Sinun käyttäjä ja kehittäjä.
+
+### Säde
+
+Hei Jani! Kiitos vahvistuksesta. Miten voin auttaa sinua tänään?
+
+
+---
+
+## Keskustelu 2026-06-15T20:31:01
+
+### Jani
+
+Muistatko mitä hakuja olen viime aikoina tehnyt?
+
+### Säde
+
+Hei Jani! Tässä lyhyt yhteenveto viimeaikaisista hakutoiveistasi:
+
+| # | Aika (karkeasti) | Hakusana / aihe | Lyhyt kuvaus |
+|---|------------------|-----------------|--------------|
+| 1 | **20 juunusta 2026** | *ruuvin valmistus* | Haeet tietoa ruuvien valmistuksesta – sain sinulle Google‑haun tuloksia, joissa käsitellään prosessia, laitteita ja materiaaleja. |
+| 2 | **20 juunusta 2026** | *JA‑Kone Oy* | Halusit ajantasaiset tiedot yrityksestä; antoi hakutulokset virallisista sivustoista, rekisteristä, LinkedIn‑profiilista ja viimeisimmistä uutisista. |
+
+Tämä on se, mitä muistan sinun tehneen juuri ennen tätä viestiä. Jos haluat tarkempia tietoja jostakin hakusta tai tehdä uuden haun, kerro vain!
