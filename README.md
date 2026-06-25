@@ -2,9 +2,9 @@
 
 [![Tests](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml)
 
-Säde v1 is a local-first AI assistant workspace built with Python, FastAPI, a browser UI, local model providers, memory, RAG, audit logging, evals, and explicit safety boundaries.
+Säde v1 is a local-first AI workspace demonstrating modern AI engineering practices: FastAPI, local LLM integration, memory, retrieval, testing, security, and maintainable architecture.
 
-The project is designed as a portfolio-grade AI engineering project: it demonstrates not only model interaction, but also testability, memory governance, tool permissions, prompt-injection awareness, authentication, and release hygiene.
+It is designed as a portfolio-grade AI engineering project: it demonstrates not only model interaction, but also testability, memory governance, tool permissions, prompt-injection awareness, authentication, and release hygiene.
 
 ## What this project demonstrates
 
