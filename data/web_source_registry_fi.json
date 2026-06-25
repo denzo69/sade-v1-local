@@ -1,0 +1,67 @@
+{
+  "id": "web_source_registry_fi_v1",
+  "status": "prepared",
+  "purpose": "Lähteiden luotettavuusluokitus Säde v1:n verkkohakua varten.",
+  "trust_levels": {
+    "1_official": {
+      "description": "Viranomaiset, lait, viralliset palvelut ja tutkimuslaitokset.",
+      "examples": [
+        "kalastusrajoitus.fi",
+        "ely-keskus.fi",
+        "luke.fi",
+        "ymparisto.fi",
+        "finlex.fi",
+        "ruokavirasto.fi",
+        "traficom.fi"
+      ]
+    },
+    "2_local_authority_or_org": {
+      "description": "Kunnat, kalatalousalueet, järjestöt ja paikalliset yhdistykset.",
+      "examples": [
+        "kalatalousalueiden sivut",
+        "kuntien sivut",
+        "kalastusseurojen sivut"
+      ]
+    },
+    "3_commercial_or_guide": {
+      "description": "Kaupalliset oppaat ja artikkelit. Hyödyllisiä, mutta ei lopullinen auktoriteetti.",
+      "examples": [
+        "kalastusoppaat",
+        "veneilysivustot",
+        "retkeilyartikkelit"
+      ]
+    },
+    "4_forum_or_social": {
+      "description": "Kokemustieto. Ei virallinen lähde.",
+      "examples": [
+        "keskustelupalstat",
+        "Facebook-ryhmät",
+        "blogikommentit"
+      ]
+    }
+  },
+  "domain_hints": {
+    "kalastus": [
+      "kalastusrajoitus.fi",
+      "luke.fi",
+      "ely-keskus.fi",
+      "kalatalousalue"
+    ],
+    "laki": [
+      "finlex.fi",
+      "oikeus.fi",
+      "vero.fi",
+      "kkv.fi"
+    ],
+    "veneily": [
+      "traficom.fi",
+      "raja.fi",
+      "ilmatieteenlaitos.fi"
+    ],
+    "terveys": [
+      "terveyskirjasto.fi",
+      "thl.fi",
+      "kaypahoito.fi"
+    ]
+  }
+}

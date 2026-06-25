@@ -1,0 +1,35 @@
+[run]
+branch = True
+source = app
+omit =
+    */__pycache__/*
+    app/memory/*
+    app/uploads/*
+    app/config.json
+    app/*.md
+    app/*.bat
+    app/*.ps1
+    app/*.zip
+    app/add_*.py
+    app/patch_*.py
+    app/fix_*.py
+    app/*backup*.py
+    app/*_backup_*.py
+    app/mainOLD*.py
+    app/create_sade_user.bat
+    app/install_semantic_memory.ps1
+    app/start_sade_v1.bat
+
+[report]
+show_missing = True
+skip_empty = True
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+
+[html]
+directory = reports/htmlcov
+
+[xml]
+output = reports/coverage.xml

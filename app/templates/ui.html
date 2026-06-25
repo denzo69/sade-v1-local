@@ -2,211 +2,584 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Säde v1</title>
+    <script>
+        (() => {
+            const csrfToken = "__SADE_CSRF_TOKEN__";
+            const nativeFetch = window.fetch.bind(window);
+            window.fetch = async (input, options = {}) => {
+                const method = String(options.method || "GET").toUpperCase();
+                const headers = new Headers(options.headers || {});
+                if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+                    headers.set("X-CSRF-Token", csrfToken);
+                }
+                const response = await nativeFetch(input, {...options, headers, credentials:"same-origin"});
+                if (response.status === 401) location.replace("/login");
+                return response;
+            };
+            window.logoutSade = async () => {
+                try { await window.fetch("/auth/logout", {method:"POST"}); }
+                finally { location.replace("/login"); }
+            };
+        })();
+    </script>
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1020;
+            --surface: #151d2f;
+            --surface-2: #1d2940;
+            --border: #2b3953;
+            --text: #f4f7fb;
+            --muted: #9eabc0;
+            --accent: #fbbf24;
+            --accent-strong: #f59e0b;
+            --blue: #93c5fd;
+            --danger: #fca5a5;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #111827;
-            color: #f9fafb;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, #17203a 0, var(--bg) 42%);
+            color: var(--text);
             margin: 0;
-            padding: 40px;
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1000px;
-            margin: auto;
-            background: #1f2937;
-            padding: 30px;
-            border-radius: 18px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.35);
-        }
-
-        h1 {
-            color: #fbbf24;
-            margin-top: 0;
-        }
-
-        h2 {
-            margin-top: 35px;
-            color: #fde68a;
-        }
-
-        input, textarea {
-            width: 100%;
-            box-sizing: border-box;
-            margin-top: 8px;
-            margin-bottom: 18px;
-            padding: 12px;
-            border-radius: 10px;
-            border: none;
-            font-size: 15px;
-        }
-
-        textarea {
-            min-height: 130px;
-            resize: vertical;
-        }
+        button, input, textarea, select { font: inherit; }
 
         button {
-            background: #fbbf24;
+            background: var(--accent);
             color: #111827;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
+            padding: 11px 17px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            font-weight: 700;
             cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            transition: background .15s ease, transform .15s ease, opacity .15s ease;
         }
 
-        button:hover {
-            background: #f59e0b;
+        button:hover { background: var(--accent-strong); }
+        button:active { transform: translateY(1px); }
+        button:disabled { cursor: wait; opacity: .55; }
+        button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+        button.secondary:hover { background: var(--surface-2); }
+        button.danger { color: var(--danger); }
+
+        .app-shell { min-height: 100vh; display: grid; grid-template-columns: 230px 1fr; }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 26px 18px;
+            background: rgba(10, 15, 29, .94);
+            border-right: 1px solid var(--border);
+            backdrop-filter: blur(16px);
         }
+
+        .brand { padding: 0 10px 24px; }
+        .brand h1 { color: var(--accent); font-size: 25px; margin: 0 0 6px; }
+        .brand p { color: var(--muted); font-size: 13px; margin: 0; }
+
+        .nav-tabs { display: grid; gap: 7px; }
+        .nav-tab {
+            background: transparent;
+            border-color: transparent;
+            color: var(--muted);
+            text-align: left;
+            width: 100%;
+        }
+        .nav-tab:hover { background: var(--surface); color: var(--text); }
+        .nav-tab.active { background: var(--surface-2); color: var(--accent); border-color: var(--border); }
+
+        .workspace { min-width: 0; }
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            min-height: 70px;
+            padding: 14px clamp(20px, 4vw, 52px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            background: rgba(11, 16, 32, .86);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+
+        .topbar-title { font-weight: 750; }
+        .runtime-status { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+        .status-chip {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 13px;
+            max-width: 460px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .status-chip.ok { color: #86efac; }
+        .logout-button { padding: 6px 10px; border-color: var(--border); background: transparent; color: var(--muted); font-size: 12px; }
+
+        main { max-width: 1480px; margin: 0 auto; padding: 24px clamp(18px, 3vw, 42px) 34px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .panel-heading { margin-bottom: 16px; }
+        .panel-heading h2 { color: var(--text); font-size: 26px; margin: 0 0 6px; }
+        .panel-heading p { color: var(--muted); margin: 0; }
+
+        .card {
+            background: rgba(21, 29, 47, .96);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, .14);
+        }
+        .card h3 { margin: 0 0 16px; color: #fde68a; }
+        .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        details.card summary {
+            cursor: pointer;
+            color: #fde68a;
+            font-weight: 800;
+            list-style-position: inside;
+        }
+        details.card summary h3,
+        details.card summary h2 {
+            display: inline;
+            margin: 0;
+        }
+        details.card[open] summary { margin-bottom: 16px; }
+        .developer-stack { display: grid; gap: 14px; }
+
+        label { display: block; font-weight: 700; color: #e5e7eb; margin-bottom: 7px; }
+        input, textarea, select {
+            width: 100%;
+            background: #0b1221;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 13px;
+            margin: 0 0 16px;
+            outline: none;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(251,191,36,.12); }
+        textarea { min-height: 120px; resize: vertical; }
 
         pre {
             white-space: pre-wrap;
-            background: #030712;
-            padding: 20px;
-            border-radius: 12px;
-            max-height: 500px;
+            overflow-wrap: anywhere;
+            background: #050914;
+            padding: 17px;
+            border: 1px solid #202b40;
+            border-radius: 11px;
+            max-height: 440px;
             overflow: auto;
+            margin: 14px 0 0;
         }
+        pre:empty { display: none; }
 
-        .status {
-            margin-top: 20px;
-            color: #93c5fd;
+        #panel-chat {
+            max-width: 1220px;
+            margin: 0 auto;
         }
-
-        label {
-            font-weight: bold;
-            color: #e5e7eb;
+        .chat-layout {
+            display: grid;
+            grid-template-rows: minmax(300px, 1fr) auto;
+            height: calc(100dvh - 178px);
+            min-height: 610px;
         }
-
         .chat-box {
-            background: #030712;
-            padding: 20px;
-            border-radius: 12px;
-            min-height: 160px;
-            max-height: 500px;
+            background: #050914;
+            padding: 18px;
+            border: 1px solid #202b40;
+            border-radius: 14px;
+            min-height: 300px;
+            max-height: none;
             overflow: auto;
             white-space: pre-wrap;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
+        }
+        .chat-box:empty::before { content: "Aloita keskustelu Säteen kanssa."; color: var(--muted); }
+        .chat-composer { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+        .chat-composer textarea { min-height: 72px; max-height: 160px; margin-bottom: 10px; }
+        .chat-hint { color: var(--muted); font-size: 12px; margin-left: auto; }
+        .user, .sade { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; max-width: 88%; }
+        .user { color: #dbeafe; background: #172554; margin-left: auto; }
+        .sade { color: #fef3c7; background: #29220e; }
+        .chat-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+        .chat-actions button { padding: 8px 12px; font-size: 13px; }
+
+        .status { min-height: 22px; margin-top: 12px; color: var(--blue); }
+        .small { color: var(--muted); font-size: 13px; }
+        .section-placeholder { color: var(--muted); }
+        body > section { display: none; }
+
+        @media (max-width: 760px) {
+            body { overflow-x: hidden; }
+            .app-shell { display: block; min-height: 100dvh; }
+            .sidebar {
+                position: sticky;
+                top: 0;
+                height: auto;
+                z-index: 20;
+                padding: max(10px, env(safe-area-inset-top)) 10px 8px;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+            .brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px 8px; }
+            .brand h1 { font-size: 19px; white-space: nowrap; }
+            .brand p { font-size: 11px; text-align: right; }
+            .nav-tabs { display: flex; overflow-x: auto; gap: 4px; padding: 0 0 2px; scrollbar-width: none; scroll-snap-type: x proximity; }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab { width: auto; min-width: max-content; white-space: nowrap; padding: 8px 10px; font-size: 13px; scroll-snap-align: start; }
+            .topbar { position: static; min-height: 0; padding: 8px 12px; align-items: center; }
+            .topbar-title { display: none; }
+            .runtime-status { width: 100%; justify-content: flex-start; gap: 5px; overflow: hidden; }
+            .status-chip { padding: 4px 8px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            #configInfo { flex: 1; min-width: 0; }
+            main { padding: 16px 10px calc(24px + env(safe-area-inset-bottom)); }
+            #panel-chat { max-width: none; }
+            .panel-heading { margin-bottom: 12px; }
+            .panel-heading h2 { font-size: 21px; margin-bottom: 4px; }
+            .panel-heading p { font-size: 13px; line-height: 1.35; }
+            .card { padding: 17px; border-radius: 13px; }
+            .card-grid { grid-template-columns: 1fr; gap: 0; }
+            .chat-layout { display: block; min-height: 0; }
+            .chat-box {
+                height: clamp(250px, 44dvh, 430px);
+                min-height: 250px;
+                max-height: none;
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 11px;
+            }
+            .chat-composer { padding: 10px; border-radius: 11px; }
+            .chat-composer label { margin-bottom: 5px; font-size: 14px; }
+            .chat-composer textarea { min-height: 68px; max-height: 32dvh; padding: 10px; margin-bottom: 8px; }
+            .chat-composer .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+            .chat-composer .actions button { width: 100%; padding: 9px 8px; font-size: 13px; }
+            .chat-composer .actions #sendChatButton { grid-column: 1 / -1; }
+            .user, .sade { max-width: 96%; padding: 10px 11px; }
+            .chat-hint { grid-column: 1 / -1; width: 100%; margin: 1px 0 0; text-align: center; }
         }
 
-        .user {
-            color: #93c5fd;
-            margin-bottom: 12px;
-        }
-
-        .sade {
-            color: #fbbf24;
-            margin-bottom: 20px;
-        }
-
-        .small {
-            color: #9ca3af;
-            font-size: 14px;
+        @media (max-width: 390px) {
+            .brand p { display: none; }
+            .panel-heading p { display: none; }
+            .chat-box { height: 42dvh; min-height: 220px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Säde v1</h1>
-        <p>Paikallinen muisti ja keskustelu ovat käytössä.</p>
-        <p class="small" id="configInfo">Ladataan asetuksia...</p>
-        <p class="small" id="ollamaStatus">Ollama: ei tarkistettu vielä</p>
-        <button onclick="checkOllamaStatus()">Tarkista Ollama</button>
-	<button onclick="createExport()">Luo vientitiedosto</button>
-	<button onclick="createBackup()">Luo varmuuskopio</button>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>Säde v1</h1>
+                <p>Paikallinen AI-työtila</p>
+            </div>
+            <nav class="nav-tabs" aria-label="Päänavigaatio">
+                <button class="nav-tab active" data-tab="chat" aria-selected="true">Keskustelu</button>
+                <button class="nav-tab" data-tab="memory" aria-selected="false">Muisti</button>
+                <button class="nav-tab" data-tab="files" aria-selected="false">Aineistot</button>
+                <button class="nav-tab" data-tab="settings" aria-selected="false">Asetukset</button>
+            </nav>
+        </aside>
 
-	<p class="small" id="exportStatus">Export: ei luotu vielä</p>
-	<p class="small" id="backupStatus">Backup: ei luotu vielä</p>
+        <div class="workspace">
+            <header class="topbar">
+                <div class="topbar-title" id="viewTitle">Keskustelu</div>
+                <div class="runtime-status">
+                    <span class="status-chip" id="ollamaStatus">Ollama: tarkistetaan...</span>
+                    <span class="status-chip" id="configInfo">Asetukset latautuvat...</span>
+                    <button class="logout-button" type="button" onclick="logoutSade()">Kirjaudu ulos</button>
+                </div>
+            </header>
 
-	<h2>Järjestelmän tila</h2>
+            <main>
+                <section class="tab-panel active" id="panel-chat" aria-labelledby="viewTitle">
+                    <div class="panel-heading">
+                        <h2>Keskustele Säteen kanssa</h2>
+                        <p>Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.</p>
+                    </div>
+                    <div class="chat-layout">
+                        <div id="chatBox" class="chat-box" aria-live="polite"></div>
+                        <div class="chat-composer">
+                            <label for="chatMessage">Viesti</label>
+                            <textarea id="chatMessage" placeholder="Kirjoita viesti Säde v1:lle..."></textarea>
+                            <div class="actions">
+                                <button id="sendChatButton" onclick="sendChat()">Lähetä</button>
+                                <button class="secondary" onclick="clearVisibleChat()">Tyhjennä näkyvä chat</button>
+                                <button class="secondary" onclick="saveVisibleChatToMemory()">Tallenna tämä keskustelu muistiin</button>
+                                <span class="chat-hint">Enter lähettää · Shift+Enter vaihtaa riviä</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-	<button onclick="loadSystemStatus()">Päivitä järjestelmän tila</button>
+                <section class="tab-panel" id="panel-memory">
+                    <div class="panel-heading">
+                        <h2>Muisti</h2>
+                        <p>Katso mitä Säde muistaa, lisää uusia muistoja ja vie muistisi talteen.</p>
+                    </div>
+                    <div class="card-grid">
+                        <div class="card">
+                            <h3>Lisää muistettava asia</h3>
+                            <label for="title">Otsikko</label>
+                            <input id="title" placeholder="Esim. Ensimmäinen keskustelu">
+                            <label for="tags">Tagit pilkulla erotettuna</label>
+                            <input id="tags" placeholder="esim. sade, muisto, kehitys">
+                            <label for="text">Mitä Säteen pitää muistaa?</label>
+                            <textarea id="text" placeholder="Kirjoita asia, jonka haluat Säteen muistavan..."></textarea>
+                            <button onclick="saveMemory()">Tallenna Säteen muistiin</button>
+                        </div>
+                        <div class="card">
+                            <h3>Mitä Säde muistaa?</h3>
+                            <label for="memorySearchQuery">Hakusana</label>
+                            <input id="memorySearchQuery" placeholder="Esim. Jani, Säde v1, keskusteluloki">
+                            <div class="actions">
+                                <button onclick="searchMemory()">Hae muistista</button>
+                                <button class="secondary" onclick="loadMemoryEntries()">Näytä mitä Säde muistaa</button>
+                                <button class="secondary" onclick="exportMemoryJson()">Vie muistini talteen</button>
+                                <button class="secondary" onclick="loadChatLog()">Näytä keskusteluloki</button>
+                            </div>
+                            <pre id="memorySearchResults"></pre>
+                        </div>
+                    </div>
+                    <details class="card">
+                        <summary><h3>Edistynyt: raakamuisti</h3></summary>
+                        <p class="small">Tekninen näkymä koko muistitedostoon. Yleensä “Näytä mitä Säde muistaa” riittää.</p>
+                        <button class="secondary" onclick="loadMemory()">Näytä raakamuisti</button>
+                        <pre id="memory">Muisti ladataan pyynnöstä.</pre>
+                    </details>
+                    <details class="card">
+                        <summary><h3>Edistynyt: keskusteluloki</h3></summary>
+                        <p class="small">Tekninen lokinäkymä. Avaa vain, jos haluat tarkistaa raakaa keskusteluhistoriaa.</p>
+                        <pre id="chatLog">Keskusteluloki ladataan pyynnöstä.</pre>
+                    </details>
+                </section>
 
-	<pre id="systemStatus">Järjestelmän tila ei ole vielä ladattu.</pre> 
-   
-        <h2>Asetukset</h2>
+                <section class="tab-panel" id="panel-files">
+                    <div class="panel-heading"><h2>Aineistot</h2><p>Opeta Sädeä tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.</p></div>
+                    <div id="filesMount" class="section-placeholder">Tiedostotyökalut latautuvat...</div>
+                </section>
 
-        <label>Malli</label>
-	<input id="configModel" placeholder="esim. gpt-oss:20b">
+                <section class="tab-panel" id="panel-settings">
+                    <div class="panel-heading"><h2>Asetukset</h2><p>Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.</p></div>
+                    <div class="card">
+                        <h3>Järjestelmän tila</h3>
+                        <div class="actions">
+                            <button onclick="checkOllamaStatus()">Tarkista Ollama</button>
+                            <button class="secondary" onclick="loadSystemStatus()">Päivitä järjestelmän tila</button>
+                        </div>
+                        <pre id="systemStatus">Järjestelmän tila ladataan pyynnöstä.</pre>
+                    </div>
+                    <div class="card">
+                        <h3>Malliasetukset</h3>
+                        <div class="card-grid">
+                            <div>
+                                <label for="configLanguage" data-i18n="settings.languageLabel">Käyttöliittymän kieli</label>
+                                <select id="configLanguage">
+                                    <option value="fi">Suomi</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div><label for="configModel">Malli</label><input id="configModel" placeholder="esim. gpt-oss:20b"></div>
+                            <div><label for="configTemperature">Lämpötila</label><input id="configTemperature" type="number" step="0.1" min="0" max="2"></div>
+                            <div><label for="configNumCtx">Konteksti / num_ctx</label><input id="configNumCtx" type="number" min="512" step="512"></div>
+                            <div><label for="configMemoryChars">Säde-muistin muistimerkit</label><input id="configMemoryChars" type="number" min="500" step="500"></div>
+                            <div><label for="configChatChars">Keskustelulokin muistimerkit</label><input id="configChatChars" type="number" min="500" step="500"></div>
+                        </div>
+                        <button onclick="saveConfigSettings()">Tallenna asetukset</button>
+                    </div>
+                    <details class="card">
+                        <summary><h3>Edistynyt: Säteen ydinprompti</h3></summary>
+                        <p class="small">Ydinpromptin muokkaus vaikuttaa Säteen käyttäytymiseen. Käytä vain kun tiedät mitä olet muuttamassa.</p>
+                        <label for="systemPromptText">System prompt</label>
+                        <textarea id="systemPromptText" placeholder="Ydinprompti ladataan, kun avaat asetukset."></textarea>
+                        <div class="actions">
+                            <button class="secondary" onclick="loadSystemPrompt()">Lataa ydinprompti</button>
+                            <button onclick="saveSystemPrompt()">Tallenna ydinprompti</button>
+                        </div>
+                    </details>
+                    <details class="card" id="developerModeSection">
+                        <summary><h3>Edistynyt: tarkistus- ja kehittäjätyökalut</h3></summary>
+                        <p class="small">Konepellin alla olevat tarkistus-, laatu-, lähdehaku-, oppimis- ja tehtävätyökalut. Tavallinen käyttö ei yleensä tarvitse näitä.</p>
+                        <div class="developer-stack">
+                            <details class="card" id="auditLogSection">
+                                <summary><h2>Audit Log</h2></summary>
+                                <p>Ketjutettu append-only-loki turvallisuuden kannalta merkittäville toiminnoille.</p>
+                                <div class="actions">
+                                    <button onclick="loadAuditStatus()">Tarkista eheys</button>
+                                    <button class="secondary" onclick="loadAuditLog()">Näytä viimeisimmät tapahtumat</button>
+                                </div>
+                                <pre id="auditLogResult">Audit-loki ladataan pyynnöstä.</pre>
+                            </details>
+                            <details class="card" id="aiQualitySection">
+                                <summary><h2>AI-laatu ja jäljitettävyys</h2></summary>
+                                <p>Staattiset evalit, live-evalien käynnistys ja kehittäjän trace-loki.</p>
+                                <div class="actions">
+                                    <button onclick="runStaticEvals()">Aja staattiset evalit</button>
+                                    <button class="secondary" onclick="runLiveEvals()">Aja live-evalit</button>
+                                    <button class="secondary" onclick="loadDebugTrace()">Näytä trace</button>
+                                    <button class="secondary" onclick="loadToolPolicies()">Työkalujen riskit</button>
+                                </div>
+                                <pre id="aiQualityResult">AI-laadun tiedot ladataan pyynnöstä.</pre>
+                            </details>
+                            <details class="card" id="languagePackSection">
+                                <summary><h2>Kielipaketin tekninen tila</h2></summary>
+                                <p>Suomen kielipaketin tila. Tavallisessa käytössä tämän kuuluu vain toimia taustalla.</p>
+                                <button onclick="loadLanguageStatus()">Näytä kielipaketin tila</button>
+                                <pre id="languagePackResult">Kielipaketin tila ladataan pyynnöstä.</pre>
+                            </details>
+                            <details class="card" id="developerAdvancedTools" open>
+                                <summary><h2>Edistyneet työkalut</h2></summary>
+                                <div id="developmentMount" class="section-placeholder">Kehitystyökalut latautuvat...</div>
+                            </details>
+                        </div>
+                    </details>
+                    <div class="card">
+                        <h3>Vienti ja varmuuskopiointi</h3>
+                        <div class="actions">
+                            <button onclick="createExport()">Luo vientitiedosto</button>
+                            <button onclick="createBackup()">Luo varmuuskopio</button>
+                            <button class="secondary" onclick="createBackupArchive()">Luo zip-varmuuskopio</button>
+                            <button class="secondary" onclick="listBackups()">Listaa varmuuskopiot</button>
+                        </div>
+                        <p class="small" id="exportStatus">Export: ei luotu vielä</p>
+                        <p class="small" id="backupStatus">Backup: ei luotu vielä</p>
+                        <pre id="backupList">Varmuuskopiot ladataan pyynnöstä.</pre>
+                    </div>
+                </section>
 
-        <label>Lämpötila</label>
-	<input id="configTemperature" type="number" step="0.1" min="0" max="2">
-
-	<label>Konteksti / num_ctx</label>
-	<input id="configNumCtx" type="number" min="512" step="512">
-
-	<label>Säde-muistin muistimerkit</label>
-	<input id="configMemoryChars" type="number" min="500" step="500">
-
-	<label>Keskustelulokin muistimerkit</label>
-	<input id="configChatChars" type="number" min="500" step="500">
-
-	<button onclick="saveConfigSettings()">Tallenna asetukset</button>
-
-        <h2>Säteen ydinprompti</h2>
-
-	<label>System prompt</label>
-	<textarea id="systemPromptText" placeholder="Säteen perusohje latautuu tähän..."></textarea>
-
-	<button onclick="loadSystemPrompt()">Näytä ydinprompti</button>
-	<button onclick="saveSystemPrompt()">Tallenna ydinprompti</button>
-
-	<h2>Keskustele Säteen kanssa</h2>
-
-        <div id="chatBox" class="chat-box"></div>
-
-        <label>Viesti</label>
-        <textarea id="chatMessage" placeholder="Kirjoita viesti Säde v1:lle..."></textarea>
-
-       	<button onclick="sendChat()">Lähetä</button>
-	<button onclick="clearVisibleChat()">Tyhjennä näkyvä chat</button>
-	<button onclick="saveVisibleChatToMemory()">Tallenna nykyinen keskustelu Säde-muistiin</button>
-
-        <h2>Tallenna muisto Säde-muistiin</h2>
-
-        <label>Otsikko</label>
-        <input id="title" placeholder="Esim. Ensimmäinen keskustelu">
-
-        <label>Tagit pilkulla erotettuna</label>
-        <input id="tags" placeholder="esim. sade, muisto, kehitys">
-
-        <label>Teksti</label>
-        <textarea id="text" placeholder="Kirjoita muisto tähän..."></textarea>
-
-        <button onclick="saveMemory()">Tallenna muisto</button>
-        <button onclick="loadMemory()">Näytä Säde-muisti</button>
-        <button onclick="loadChatLog()">Näytä keskusteluloki</button>
-
-        <div class="status" id="status"></div>
-
-        <h2>Hae Säde-muistista</h2>
-
-	<label>Hakusana</label>
-	<input id="memorySearchQuery" placeholder="Esim. Jani, Säde v1, keskusteluloki">
-
-	<button onclick="searchMemory()">Hae Säde-muistista</button>
-
-	<h2>Hakutulokset</h2>
-	<pre id="memorySearchResults"></pre>
-
-	<h2>Säde-muisti</h2>
-        <pre id="memory"></pre>
-
-        <h2>Keskusteluloki</h2>
-        <pre id="chatLog"></pre>
+                <div class="status" id="status" role="status" aria-live="polite"></div>
+            </main>
+        </div>
     </div>
 
     <script>
+    const I18N = {
+        fi: {
+            appSubtitle: "Paikallinen AI-työtila",
+            navChat: "Keskustelu",
+            navMemory: "Muisti",
+            navFiles: "Aineistot",
+            navSettings: "Asetukset",
+            chatTitle: "Keskustele Säteen kanssa",
+            chatLead: "Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.",
+            messageLabel: "Viesti",
+            send: "Lähetä",
+            clearChat: "Tyhjennä näkyvä chat",
+            saveConversation: "Tallenna tämä keskustelu muistiin",
+            memoryTitle: "Muisti",
+            memoryLead: "Katso mitä Säde muistaa, lisää uusia muistoja ja vie muistisi talteen.",
+            filesTitle: "Aineistot",
+            filesLead: "Opeta Sädeä tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.",
+            settingsTitle: "Asetukset",
+            settingsLead: "Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.",
+            languageLabel: "Käyttöliittymän kieli",
+            saveSettings: "Tallenna asetukset",
+            configLoading: "Asetukset latautuvat...",
+            modelWord: "Malli"
+        },
+        en: {
+            appSubtitle: "Local AI workspace",
+            navChat: "Chat",
+            navMemory: "Memory",
+            navFiles: "Sources",
+            navSettings: "Settings",
+            chatTitle: "Chat with Säde",
+            chatLead: "Chat is the main workspace. Tool commands can be used in the same input.",
+            messageLabel: "Message",
+            send: "Send",
+            clearChat: "Clear visible chat",
+            saveConversation: "Save this conversation to memory",
+            memoryTitle: "Memory",
+            memoryLead: "Review what Säde remembers, add new memories, and export your memory.",
+            filesTitle: "Sources",
+            filesLead: "Teach Säde with files: add a document, summarize it, and save the essentials to memory.",
+            settingsTitle: "Settings",
+            settingsLead: "Model, system status, backups, and less frequent maintenance actions.",
+            languageLabel: "Interface language",
+            saveSettings: "Save settings",
+            configLoading: "Loading settings...",
+            modelWord: "Model"
+        }
+    };
+    let currentUiLanguage = "fi";
+    function t(key) {
+        return (I18N[currentUiLanguage] && I18N[currentUiLanguage][key]) || I18N.fi[key] || key;
+    }
+    function setText(selector, text) {
+        const element = document.querySelector(selector);
+        if (element) element.innerText = text;
+    }
+    function applyUiLanguage(language) {
+        currentUiLanguage = ["fi", "en"].includes(language) ? language : "fi";
+        document.documentElement.lang = currentUiLanguage;
+        setText(".brand p", t("appSubtitle"));
+        setText('[data-tab="chat"]', t("navChat"));
+        setText('[data-tab="memory"]', t("navMemory"));
+        setText('[data-tab="files"]', t("navFiles"));
+        setText('[data-tab="settings"]', t("navSettings"));
+        setText("#panel-chat .panel-heading h2", t("chatTitle"));
+        setText("#panel-chat .panel-heading p", t("chatLead"));
+        setText('label[for="chatMessage"]', t("messageLabel"));
+        setText("#sendChatButton", t("send"));
+        const chatButtons = document.querySelectorAll("#panel-chat .chat-composer button.secondary");
+        if (chatButtons[0]) chatButtons[0].innerText = t("clearChat");
+        if (chatButtons[1]) chatButtons[1].innerText = t("saveConversation");
+        setText("#panel-memory .panel-heading h2", t("memoryTitle"));
+        setText("#panel-memory .panel-heading p", t("memoryLead"));
+        setText("#panel-files .panel-heading h2", t("filesTitle"));
+        setText("#panel-files .panel-heading p", t("filesLead"));
+        setText("#panel-settings .panel-heading h2", t("settingsTitle"));
+        setText("#panel-settings .panel-heading p", t("settingsLead"));
+        setText('label[for="configLanguage"]', t("languageLabel"));
+        const saveSettingsButton = document.querySelector('#panel-settings button[onclick="saveConfigSettings()"]');
+        if (saveSettingsButton) saveSettingsButton.innerText = t("saveSettings");
+        const configLanguage = document.getElementById("configLanguage");
+        if (configLanguage) configLanguage.value = currentUiLanguage;
+        const viewTitle = document.getElementById("viewTitle");
+        const activeTab = document.querySelector(".nav-tab.active");
+        if (viewTitle && activeTab) viewTitle.innerText = activeTab.innerText;
+    }
+
     function addChatLine(role, text) {
         const chatBox = document.getElementById("chatBox");
         const div = document.createElement("div");
         div.className = role === "Sinä" ? "user" : "sade";
         div.innerText = role + ":\n" + text;
         chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addChatActions(actions) {
+        if (!Array.isArray(actions) || !actions.length) return;
+        const chatBox = document.getElementById("chatBox");
+        const wrapper = document.createElement("div");
+        wrapper.className = "chat-actions";
+        actions.forEach(action => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "secondary";
+            button.innerText = action.label;
+            button.addEventListener("click", () => {
+                document.getElementById("chatMessage").value = action.message;
+                wrapper.remove();
+                sendChat();
+            });
+            wrapper.appendChild(button);
+        });
+        chatBox.appendChild(wrapper);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
@@ -307,8 +680,50 @@ async function searchMemory() {
         document.getElementById("status").innerText = "Yhteysvirhe haussa.";
     }
 }
+
+async function loadMemoryEntries() {
+    const resultsBox = document.getElementById("memorySearchResults");
+    document.getElementById("status").innerText = "Ladataan muistimerkintöjä...";
+    try {
+        const response = await fetch("/memory/entries?limit=50");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            resultsBox.innerText = "Muistimerkintöjen lataus epäonnistui: " + JSON.stringify(data);
+            return;
+        }
+        let output = "Muistimerkintöjä: " + data.count + "\n\n";
+        (data.entries || []).forEach((item, index) => {
+            output += (index + 1) + ". " + item.title + "\n";
+            output += "ID: " + item.id + "\n";
+            if (item.time) output += "Aika: " + item.time + "\n";
+            output += item.preview + "\n\n---\n\n";
+        });
+        resultsBox.innerText = output || "Ei muistimerkintöjä.";
+        document.getElementById("status").innerText = "Muistimerkinnät ladattu.";
+    } catch (error) {
+        resultsBox.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+async function exportMemoryJson() {
+    const resultsBox = document.getElementById("memorySearchResults");
+    document.getElementById("status").innerText = "Viedään muistia JSON-muotoon...";
+    try {
+        const response = await fetch("/memory/export", { method: "POST" });
+        const data = await response.json();
+        if (response.ok && data.ok) {
+            resultsBox.innerText = "Muisti viety JSON-muotoon ✅\n" + data.path + "\nMerkintöjä: " + data.count;
+            document.getElementById("status").innerText = "Muistin vienti valmis.";
+        } else {
+            resultsBox.innerText = "Muistin vienti epäonnistui: " + JSON.stringify(data);
+        }
+    } catch (error) {
+        resultsBox.innerText = "Yhteysvirhe: " + error;
+    }
+}
 async function sendChat() {
         const messageBox = document.getElementById("chatMessage");
+        const sendButton = document.getElementById("sendChatButton");
         const message = messageBox.value.trim();
 
         if (!message) {
@@ -319,6 +734,8 @@ async function sendChat() {
         addChatLine("Sinä", message);
         messageBox.value = "";
         document.getElementById("status").innerText = "Säde ajattelee...";
+        sendButton.disabled = true;
+        sendButton.innerText = "Säde ajattelee...";
 
         try {
             const response = await fetch("/chat", {
@@ -335,15 +752,18 @@ async function sendChat() {
 
             if (response.ok) {
                 addChatLine("Säde", data.reply);
+                addChatActions(data.actions);
                 document.getElementById("status").innerText = "Vastaus valmis.";
-                loadMemory();
-                loadChatLog();
             } else {
                 document.getElementById("status").innerText = "Virhe: " + JSON.stringify(data);
             }
 
         } catch (error) {
             document.getElementById("status").innerText = "Yhteysvirhe: " + error;
+        } finally {
+            sendButton.disabled = false;
+            sendButton.innerText = "Lähetä";
+            messageBox.focus();
         }
     }
 
@@ -461,9 +881,11 @@ async function loadConfigInfo() {
         document.getElementById("configNumCtx").value = data.num_ctx ?? "";
         document.getElementById("configMemoryChars").value = data.memory_context_chars ?? "";
         document.getElementById("configChatChars").value = data.chat_context_chars ?? "";
+        document.getElementById("configLanguage").value = data.ui_language || "fi";
+        applyUiLanguage(data.ui_language || "fi");
 
         infoBox.innerText =
-            "Malli: " + data.ollama_model +
+            t("modelWord") + ": " + data.ollama_model +
             " / lämpötila: " + data.temperature +
             " / konteksti: " + data.num_ctx +
             " / muisti: " + data.memory_context_chars +
@@ -533,6 +955,7 @@ async function saveConfigSettings() {
     const numCtx = parseInt(document.getElementById("configNumCtx").value);
     const memoryChars = parseInt(document.getElementById("configMemoryChars").value);
     const chatChars = parseInt(document.getElementById("configChatChars").value);
+    const uiLanguage = document.getElementById("configLanguage").value || "fi";
 
     if (!model) {
         document.getElementById("status").innerText = "Mallin nimi ei saa olla tyhjä.";
@@ -550,7 +973,8 @@ async function saveConfigSettings() {
                 temperature: temperature,
                 num_ctx: numCtx,
                 memory_context_chars: memoryChars,
-                chat_context_chars: chatChars
+                chat_context_chars: chatChars,
+                ui_language: uiLanguage
             })
         });
 
@@ -558,6 +982,7 @@ async function saveConfigSettings() {
 
         if (response.ok && data.ok) {
             document.getElementById("status").innerText = "Asetukset tallennettu.";
+            applyUiLanguage(uiLanguage);
             loadConfigInfo();
             checkOllamaStatus();
         } else {
@@ -701,22 +1126,239 @@ async function createBackup() {
         backupBox.innerText = "Backup-yhteysvirhe ❌ " + error;
     }
 }    
+
+async function createBackupArchive() {
+    const backupBox = document.getElementById("backupStatus");
+    backupBox.innerText = "Zip-backup: luodaan...";
+    try {
+        const response = await fetch("/backup/archive", { method: "POST" });
+        const data = await response.json();
+        if (response.ok && data.ok) {
+            backupBox.innerText = "Zip-backup luotu ✅ " + data.path;
+            document.getElementById("status").innerText = "Zip-varmuuskopio luotu.";
+            listBackups();
+        } else {
+            backupBox.innerText = "Zip-backup epäonnistui ❌ " + JSON.stringify(data);
+        }
+    } catch (error) {
+        backupBox.innerText = "Zip-backup-yhteysvirhe ❌ " + error;
+    }
+}
+
+async function listBackups() {
+    const backupList = document.getElementById("backupList");
+    backupList.innerText = "Ladataan varmuuskopioita...";
+    try {
+        const response = await fetch("/backup/list");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            backupList.innerText = "Varmuuskopioiden listaus epäonnistui: " + JSON.stringify(data);
+            return;
+        }
+        let output = "Varmuuskopioita: " + data.count + "\n\n";
+        (data.backups || []).forEach((item, index) => {
+            output += (index + 1) + ". " + item.name + "\n";
+            output += item.path + "\n";
+            output += "Koko: " + item.size_bytes + " bytes\n";
+            output += "Muokattu: " + item.modified + "\n\n";
+        });
+        backupList.innerText = output || "Ei varmuuskopioita.";
+    } catch (error) {
+        backupList.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+async function runStaticEvals() {
+    const box = document.getElementById("aiQualityResult");
+    box.innerText = "Ajetaan staattisia evaleja...";
+    try {
+        const response = await fetch("/evals/static");
+        const data = await response.json();
+        box.innerText = JSON.stringify(data, null, 2);
+        document.getElementById("status").innerText = data.ok ? "Staattiset evalit läpi." : "Staattisissa evaleissa huomautettavaa.";
+    } catch (error) {
+        box.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+async function runLiveEvals() {
+    const box = document.getElementById("aiQualityResult");
+    box.innerText = "Ajetaan live-evaleja. Tämä voi kestää, jos malli on hidas...";
+    try {
+        const response = await fetch("/evals/live?max_cases=3", { method: "POST" });
+        const data = await response.json();
+        box.innerText = JSON.stringify(data, null, 2);
+        document.getElementById("status").innerText = data.ok ? "Live-evalit läpi." : "Live-evaleissa huomautettavaa.";
+    } catch (error) {
+        box.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+async function loadDebugTrace() {
+    const box = document.getElementById("aiQualityResult");
+    box.innerText = "Ladataan trace-lokia...";
+    try {
+        const response = await fetch("/debug/trace?limit=30");
+        const data = await response.json();
+        box.innerText = JSON.stringify(data, null, 2);
+    } catch (error) {
+        box.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+async function loadToolPolicies() {
+    const box = document.getElementById("aiQualityResult");
+    box.innerText = "Ladataan työkalujen riskipolitiikkaa...";
+    try {
+        const response = await fetch("/tools/policies");
+        const data = await response.json();
+        box.innerText = JSON.stringify(data, null, 2);
+    } catch (error) {
+        box.innerText = "Yhteysvirhe: " + error;
+    }
+}
+
+function initializeWorkspace() {
+    const mounts = {
+        "sade-upload-section": "filesMount"
+    };
+
+    Object.entries(mounts).forEach(([sectionId, mountId]) => {
+        const section = document.getElementById(sectionId);
+        const mount = document.getElementById(mountId);
+        if (section && mount) {
+            section.classList.add("card");
+            section.style.marginTop = "0";
+            mount.replaceWith(section);
+        }
+    });
+
+    const developmentMount = document.getElementById("developmentMount");
+    ["sade-rag-engine-section", "sade-learning-section", "sade-learning-review-section", "sade-task-section", "sade-dev-section"]
+        .forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section && developmentMount) {
+                section.classList.add("card");
+                section.style.marginTop = "0";
+                developmentMount.parentElement.insertBefore(section, developmentMount);
+            }
+        });
+    if (developmentMount) developmentMount.remove();
+
+    const titles = {
+        chat: "Keskustelu",
+        memory: "Muisti",
+        files: "Aineistot",
+        settings: "Asetukset"
+    };
+
+    document.querySelectorAll(".nav-tab").forEach(button => {
+        button.addEventListener("click", () => {
+            const tabName = button.dataset.tab;
+            document.querySelectorAll(".nav-tab").forEach(item => {
+                const selected = item === button;
+                item.classList.toggle("active", selected);
+                item.setAttribute("aria-selected", String(selected));
+            });
+            document.querySelectorAll(".tab-panel").forEach(panel => {
+                panel.classList.toggle("active", panel.id === "panel-" + tabName);
+            });
+            document.getElementById("viewTitle").innerText = document.querySelector(".nav-tab.active")?.innerText || titles[tabName] || "Säde v1";
+            window.scrollTo({top: 0, behavior: "smooth"});
+
+            if (tabName === "settings" && !button.dataset.loaded) {
+                loadConfigInfo();
+                loadSystemPrompt();
+                button.dataset.loaded = "true";
+            }
+        });
+    });
+
+    const languageSelect = document.getElementById("configLanguage");
+    if (languageSelect) {
+        languageSelect.addEventListener("change", () => applyUiLanguage(languageSelect.value));
+    }
+
+    const chatMessage = document.getElementById("chatMessage");
+    chatMessage.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            if (!document.getElementById("sendChatButton").disabled) sendChat();
+        }
+    });
+}
+
+async function loadAuditStatus() {
+    const resultBox = document.getElementById("auditLogResult");
+    resultBox.textContent = "Tarkistetaan audit-ketjua...";
+    try {
+        const response = await fetch("/audit/status");
+        const data = await response.json();
+        resultBox.textContent = data.valid
+            ? `Audit-ketju on ehjä.\nTapahtumia: ${data.count}\nViimeisin: ${data.last_event_at || "-"}`
+            : `Audit-ketju ei ole ehjä.\n${data.error || "Tuntematon virhe"}`;
+    } catch (error) {
+        resultBox.textContent = "Audit-tilan lukeminen epäonnistui: " + error;
+    }
+}
+
+async function loadAuditLog() {
+    const resultBox = document.getElementById("auditLogResult");
+    resultBox.textContent = "Ladataan audit-tapahtumia...";
+    try {
+        const response = await fetch("/audit/log", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({limit: 30})
+        });
+        const data = await response.json();
+        if (!data.valid) {
+            resultBox.textContent = "Audit-ketju ei ole ehjä: " + (data.error || "tuntematon virhe");
+            return;
+        }
+        const items = data.items || [];
+        resultBox.textContent = items.length
+            ? items.map(item => `#${item.sequence} ${item.time}\n${item.category} / ${item.action} / ${item.outcome}\nRiski: ${item.risk_level}\nKohde: ${item.target || "-"}\nSyy: ${item.reason || "-"}`).join("\n\n---\n\n")
+            : "Audit-loki on vielä tyhjä.";
+    } catch (error) {
+        resultBox.textContent = "Audit-lokin lukeminen epäonnistui: " + error;
+    }
+}
+
+async function loadLanguageStatus() {
+    const resultBox = document.getElementById("languagePackResult");
+    resultBox.textContent = "Ladataan kielipaketin tilaa...";
+    try {
+        const response = await fetch("/language/status");
+        const data = await response.json();
+        resultBox.textContent = [
+            `Tila: ${data.enabled ? "käytössä" : "pois käytöstä"}`,
+            `Versio: ${data.version}`,
+            `Oletuskieli: ${data.default_language}`,
+            `Projektitermejä: ${data.terminology_count}`,
+            `Politiikka: ${data.policy_exists ? "löytyy" : "puuttuu"}`,
+            "",
+            ...(data.limitations || []).map(item => "- " + item)
+        ].join("\n");
+    } catch (error) {
+        resultBox.textContent = "Kielipaketin tilan lukeminen epäonnistui: " + error;
+    }
+}
+
 window.addEventListener("DOMContentLoaded", function () {
+    initializeWorkspace();
     loadConfigInfo();
     checkOllamaStatus();
-    loadSystemPrompt();
-    loadSystemStatus();
-    loadMemory();
-    loadChatLog();
+    document.getElementById("chatMessage").focus();
 });
 </script>
 
 <!-- Säde upload UI v1 -->
 <section id="sade-upload-section" style="margin-top: 32px;">
-    <h2>Liitä tiedosto Säteelle</h2>
+    <h2>Opeta Sädeä tiedostolla</h2>
 
     <p style="margin-bottom: 10px;">
-        Lataa tekstitiedosto uploads-kansioon. Sen jälkeen voit pyytää Sädeä tiivistämään sen tai lisäämään sen muistiin.
+        Valitse tekstitiedosto, jonka haluat antaa Säteen käyttöön. Lähetyksen jälkeen voit pyytää Sädeä tiivistämään sen tai opettamaan olennaiset asiat muistiin.
     </p>
 
     <input
@@ -726,7 +1368,7 @@ window.addEventListener("DOMContentLoaded", function () {
         style="display:block; margin-bottom: 12px;"
     />
 
-    <button type="button" onclick="uploadFileToSade()">Lähetä tiedosto Säteelle</button>
+    <button type="button" onclick="uploadFileToSade()">Lisää aineisto Säteelle</button>
 
     <pre id="sade-upload-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -745,7 +1387,7 @@ async function uploadFileToSade() {
     const formData = new FormData();
     formData.append("file", file);
 
-    resultBox.textContent = "Lähetetään tiedostoa Säteelle...";
+    resultBox.textContent = "Lisätään aineistoa Säteelle...";
 
     try {
         const response = await fetch("/files/upload", {
@@ -756,24 +1398,702 @@ async function uploadFileToSade() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Upload epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Aineiston lisääminen epäonnistui:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Tiedosto ladattu onnistuneesti.\n\n" +
+            "Aineisto lisätty onnistuneesti.\n\n" +
             "Polku: " + data.relative_path + "\n" +
             "Koko: " + data.size_bytes + " tavua\n\n" +
-            "Voit nyt kirjoittaa chattiin esimerkiksi:\n" +
+            "Seuraavat hyödylliset komennot:\n" +
             "- tiivistä tiedosto " + data.relative_path + "\n" +
-            "- lisää tiedosto " + data.relative_path + " muistiin";
+            "- lisää tiedosto " + data.relative_path + " muistiin\n\n" +
+            "Käyttäjän kielellä: pyydä Sädeä tiivistämään tiedosto tai opettamaan sen tärkeimmät asiat.";
 
     } catch (error) {
-        resultBox.textContent = "Upload epäonnistui: " + error;
+        resultBox.textContent = "Aineiston lisääminen epäonnistui: " + error;
     }
 }
 </script>
 <!-- /Säde upload UI v1 -->
+
+<!-- Säde task queue UI v1 -->
+<section id="sade-task-section" style="margin-top: 32px;">
+    <h2>Tehtäväjono</h2>
+
+    <p style="margin-bottom: 10px;">
+        Lisää tehtäviä jonoon ja suorita niitä yksi kerrallaan.
+    </p>
+
+    <label for="sade-task-title">Otsikko</label>
+    <input
+        id="sade-task-title"
+        type="text"
+        placeholder="Esim. Tiivistä testitiedosto"
+        style="display:block; width:100%; margin-bottom: 10px;"
+    />
+
+    <label for="sade-task-prompt">Tehtävä</label>
+    <textarea
+        id="sade-task-prompt"
+        placeholder="Esim. tiivistä tiedosto uploads/testi.md"
+        style="display:block; width:100%; min-height: 90px; margin-bottom: 12px;"
+    ></textarea>
+
+    <button type="button" onclick="addSadeTask()">Lisää tehtävä</button>
+    <button type="button" onclick="listSadeTasks()">Näytä tehtävät</button>
+    <button type="button" onclick="runNextSadeTask()">Suorita seuraava</button>
+
+    <pre id="sade-task-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
+</section>
+
+<script>
+async function addSadeTask() {
+    const title = document.getElementById("sade-task-title").value.trim();
+    const prompt = document.getElementById("sade-task-prompt").value.trim();
+    const resultBox = document.getElementById("sade-task-result");
+
+    if (!prompt) {
+        resultBox.textContent = "Kirjoita ensin tehtävä.";
+        return;
+    }
+
+    resultBox.textContent = "Lisätään tehtävää jonoon...";
+
+    try {
+        const response = await fetch("/tasks/add", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                title: title || null,
+                prompt: prompt,
+                tags: ["ui"],
+                priority: 3
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Tehtävän lisäys epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Tehtävä lisätty jonoon.\n\n" +
+            "ID: " + data.task.id + "\n" +
+            "Otsikko: " + data.task.title + "\n" +
+            "Tila: " + data.task.status;
+
+    } catch (error) {
+        resultBox.textContent = "Tehtävän lisäys epäonnistui: " + error;
+    }
+}
+
+async function listSadeTasks() {
+    const resultBox = document.getElementById("sade-task-result");
+    resultBox.textContent = "Haetaan tehtäviä...";
+
+    try {
+        const response = await fetch("/tasks/list", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                status: null,
+                limit: 50
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Tehtävien haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.tasks || data.tasks.length === 0) {
+            resultBox.textContent = "Tehtäväjono on tyhjä.";
+            return;
+        }
+
+        resultBox.textContent = data.tasks.map(task =>
+            "[" + task.status + "] " + task.id + " — " + task.title + "\n" +
+            "Prompt: " + task.prompt
+        ).join("\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "Tehtävien haku epäonnistui: " + error;
+    }
+}
+
+async function runNextSadeTask() {
+    const resultBox = document.getElementById("sade-task-result");
+    resultBox.textContent = "Suoritetaan seuraavaa tehtävää...";
+
+    try {
+        const response = await fetch("/tasks/run-next", {
+            method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.ok === false) {
+            resultBox.textContent = "Tehtävän suoritus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent = JSON.stringify(data, null, 2);
+
+    } catch (error) {
+        resultBox.textContent = "Tehtävän suoritus epäonnistui: " + error;
+    }
+}
+</script>
+<!-- /Säde task queue UI v1 -->
+
+<!-- Säde Dev Mode UI v1 -->
+<section id="sade-dev-section" style="margin-top: 32px;">
+    <h2>Dev Mode</h2>
+
+    <p style="margin-bottom: 10px;">
+        Skannaa projektin rakenne ja hae funktioita, reittejä tai tiedostoja codebase mapista.
+    </p>
+
+    <button type="button" onclick="buildSadeCodebaseMap()">Skannaa projekti</button>
+    <button type="button" onclick="readSadeCodebaseMap()">Näytä mapin tila</button>
+
+    <div style="margin-top: 14px;">
+        <label for="sade-dev-query">Haku codebase mapista</label>
+        <input
+            id="sade-dev-query"
+            type="text"
+            placeholder="Esim. upload, chat, memory, route, task"
+            style="display:block; width:100%; margin-bottom: 10px;"
+        />
+        <button type="button" onclick="findInSadeCodebaseMap()">Hae mapista</button>
+    </div>
+
+    <pre id="sade-dev-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
+</section>
+
+<script>
+async function buildSadeCodebaseMap() {
+    const resultBox = document.getElementById("sade-dev-result");
+    resultBox.textContent = "Skannataan projektia...";
+
+    try {
+        const response = await fetch("/dev/map", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({include_snippets: false})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Skannaus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Codebase map luotu.\n\n" +
+            "Tiedostoja: " + data.file_count + "\n" +
+            "Reittejä: " + data.route_count + "\n" +
+            "Funktioita: " + data.function_count + "\n" +
+            "Luokkia: " + data.class_count + "\n\n" +
+            "Map: " + data.map_path;
+
+    } catch (error) {
+        resultBox.textContent = "Skannaus epäonnistui: " + error;
+    }
+}
+
+async function readSadeCodebaseMap() {
+    const resultBox = document.getElementById("sade-dev-result");
+    resultBox.textContent = "Haetaan codebase mapia...";
+
+    try {
+        const response = await fetch("/dev/map");
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Mapia ei voitu lukea:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Codebase map löytyy.\n\n" +
+            "Luotu: " + data.created_at + "\n" +
+            "Tiedostoja: " + data.file_count + "\n" +
+            "Reittejä: " + data.route_count + "\n" +
+            "Funktioita: " + data.function_count + "\n" +
+            "Luokkia: " + data.class_count;
+
+    } catch (error) {
+        resultBox.textContent = "Mapin luku epäonnistui: " + error;
+    }
+}
+
+async function findInSadeCodebaseMap() {
+    const query = document.getElementById("sade-dev-query").value.trim();
+    const resultBox = document.getElementById("sade-dev-result");
+
+    if (!query) {
+        resultBox.textContent = "Kirjoita ensin hakusana.";
+        return;
+    }
+
+    resultBox.textContent = "Haetaan mapista...";
+
+    try {
+        const response = await fetch("/dev/find", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({query: query, limit: 20})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+            resultBox.textContent = "Ei osumia haulle: " + query;
+            return;
+        }
+
+        resultBox.textContent = data.results.map(item => {
+            const routes = item.analysis && item.analysis.routes
+                ? item.analysis.routes.map(route => route.method + " " + route.path).join(", ")
+                : "";
+
+            const functions = item.analysis && item.analysis.functions
+                ? item.analysis.functions.map(fn => fn.name).slice(0, 12).join(", ")
+                : "";
+
+            return "📄 " + item.path +
+                (routes ? "\nRoutes: " + routes : "") +
+                (functions ? "\nFunctions: " + functions : "");
+        }).join("\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "Haku epäonnistui: " + error;
+    }
+}
+</script>
+<!-- /Säde Dev Mode UI v1 -->
+
+<!-- Säde Autonomous Learning Loop UI v1 -->
+<section id="sade-learning-section" style="margin-top: 32px;">
+    <h2>Autonomous Learning Loop</h2>
+
+    <p style="margin-bottom: 10px;">
+        Skannaa uploads-kansio, tunnista uudet tekstitiedostot ja lisää ne Säde-muistiin sekä semanttiseen muistiin.
+    </p>
+
+    <label for="sade-learning-limit">Maksimi tiedostomäärä per oppimiskierros</label>
+    <input
+        id="sade-learning-limit"
+        type="number"
+        value="10"
+        min="1"
+        max="100"
+        style="display:block; width:120px; margin-bottom: 12px;"
+    />
+
+    <button type="button" onclick="scanSadeLearningFiles()">Skannaa uudet tiedostot</button>
+    <button type="button" onclick="runSadeLearningLoop()">Opi uudet tiedostot</button>
+    <button type="button" onclick="showSadeLearningStatus()">Näytä oppimistila</button>
+
+    <pre id="sade-learning-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
+</section>
+
+<script>
+async function showSadeLearningStatus() {
+    const resultBox = document.getElementById("sade-learning-result");
+    resultBox.textContent = "Haetaan oppimistilaa...";
+
+    try {
+        const response = await fetch("/learning/status");
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Oppimistilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Autonomous Learning Loop on käytössä.\n\n" +
+            "Odottavia tiedostoja: " + data.pending_files + "\n" +
+            "Oppimistapahtumia: " + data.learning_events + "\n\n" +
+            "Uploads: " + data.uploads_path + "\n" +
+            "Learning log: " + data.learning_log;
+
+    } catch (error) {
+        resultBox.textContent = "Oppimistilan haku epäonnistui: " + error;
+    }
+}
+
+async function scanSadeLearningFiles() {
+    const resultBox = document.getElementById("sade-learning-result");
+    resultBox.textContent = "Skannataan uusia tiedostoja...";
+
+    try {
+        const response = await fetch("/learning/scan", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                include_already_ingested: false,
+                limit: 100
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Skannaus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.candidates || data.candidates.length === 0) {
+            resultBox.textContent =
+                "Uusia opittavia tiedostoja ei löytynyt.\n\n" +
+                "Ohitettuja: " + data.skipped_count;
+            return;
+        }
+
+        resultBox.textContent =
+            "Uusia opittavia tiedostoja löytyi: " + data.candidate_count + "\n\n" +
+            data.candidates.map(item =>
+                "- " + item.relative_path + " (" + item.size_bytes + " tavua)"
+            ).join("\n");
+
+    } catch (error) {
+        resultBox.textContent = "Skannaus epäonnistui: " + error;
+    }
+}
+
+async function runSadeLearningLoop() {
+    const resultBox = document.getElementById("sade-learning-result");
+    const limitInput = document.getElementById("sade-learning-limit");
+    const maxFiles = parseInt(limitInput.value || "10", 10);
+
+    resultBox.textContent = "Säde opiskelee uusia tiedostoja...";
+
+    try {
+        const response = await fetch("/learning/run", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                max_files: maxFiles,
+                add_to_memory: true,
+                add_to_semantic: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Oppimiskierros epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.learned || data.learned.length === 0) {
+            resultBox.textContent =
+                "Oppimiskierros suoritettu, mutta uusia tiedostoja ei ollut.\n\n" +
+                "Ohitettuja: " + (data.scan ? data.scan.skipped_count : "?");
+            return;
+        }
+
+        resultBox.textContent =
+            "Oppimiskierros valmis.\n\n" +
+            "Opittu: " + data.learned_count + "\n" +
+            "Epäonnistui: " + data.failed_count + "\n\n" +
+            data.learned.map(item =>
+                "✅ " + item.relative_path +
+                (item.semantic_chunks ? "\nSemantic chunks: " + item.semantic_chunks : "")
+            ).join("\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "Oppimiskierros epäonnistui: " + error;
+    }
+}
+</script>
+<!-- /Säde Autonomous Learning Loop UI v1 -->
+
+<!-- Säde Learning Review UI v1 -->
+<section id="sade-learning-review-section" style="margin-top: 32px;">
+    <h2>Learning Review</h2>
+
+    <p style="margin-bottom: 10px;">
+        Tee opituista tiedostoista opiskelumuistiinpanot: mitä opin, tärkeät käsitteet, yhteys Säde v1 -projektiin ja jatkotehtävät.
+    </p>
+
+    <label for="sade-learning-review-path">Tiedostopolku</label>
+    <input
+        id="sade-learning-review-path"
+        type="text"
+        placeholder="Esim. uploads/ai_agent_terms_atlas.md"
+        style="display:block; width:100%; margin-bottom: 10px;"
+    />
+
+    <button type="button" onclick="createSadeLearningReviewForFile()">Tee katsaus tiedostosta</button>
+    <button type="button" onclick="createSadeLearningReviewsRecent()">Tee katsaukset viimeksi opituista</button>
+    <button type="button" onclick="showSadeLearningReviews()">Näytä katsaukset</button>
+    <button type="button" onclick="showSadeLearningReviewStatus()">Näytä katsaus-tila</button>
+
+    <pre id="sade-learning-review-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
+</section>
+
+<script>
+async function showSadeLearningReviewStatus() {
+    const resultBox = document.getElementById("sade-learning-review-result");
+    resultBox.textContent = "Haetaan Learning Review -tilaa...";
+
+    try {
+        const response = await fetch("/learning/review/status");
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Tilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Learning Review v1 on käytössä.\n\n" +
+            "Katsauksia: " + data.reviews_count + "\n" +
+            "Markdown: " + data.reviews_md + "\n" +
+            "Log: " + data.reviews_log;
+
+    } catch (error) {
+        resultBox.textContent = "Tilan haku epäonnistui: " + error;
+    }
+}
+
+async function createSadeLearningReviewForFile() {
+    const pathInput = document.getElementById("sade-learning-review-path");
+    const resultBox = document.getElementById("sade-learning-review-result");
+    const relativePath = pathInput.value.trim();
+
+    if (!relativePath) {
+        resultBox.textContent = "Kirjoita ensin tiedostopolku, esimerkiksi uploads/ai_agent_terms_atlas.md";
+        return;
+    }
+
+    resultBox.textContent = "Luodaan oppimiskatsausta...";
+
+    try {
+        const response = await fetch("/learning/review/file", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                relative_path: relativePath,
+                force: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Katsauksen luonti epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        const review = data.review || {};
+
+        resultBox.textContent =
+            (data.already_exists ? "Tästä tiedostosta oli jo katsaus.\n\n" : "Oppimiskatsaus luotu.\n\n") +
+            "Review ID: " + review.review_id + "\n" +
+            "Otsikko: " + review.title + "\n" +
+            "Lähde: " + review.relative_path + "\n\n" +
+            "Tärkeät käsitteet:\n" +
+            (review.terms || []).map(term => "- " + term).join("\n") +
+            "\n\nJatkotehtävät:\n" +
+            (review.future_tasks || []).map(task => "- " + task).join("\n");
+
+    } catch (error) {
+        resultBox.textContent = "Katsauksen luonti epäonnistui: " + error;
+    }
+}
+
+async function createSadeLearningReviewsRecent() {
+    const resultBox = document.getElementById("sade-learning-review-result");
+    resultBox.textContent = "Luodaan katsauksia viimeksi opituista tiedostoista...";
+
+    try {
+        const response = await fetch("/learning/review/recent", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                max_files: 10,
+                force: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Katsausajo epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "Katsausajo valmis.\n\n" +
+            "Luotu: " + data.created_count + "\n" +
+            "Ohitettu: " + data.skipped_count + "\n" +
+            "Epäonnistui: " + data.failed_count + "\n\n" +
+            (data.created || []).map(item =>
+                "✅ " + item.relative_path + "\n" +
+                "Review ID: " + item.review_id + "\n" +
+                "Käsitteet: " + (item.terms || []).join(", ")
+            ).join("\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "Katsausajo epäonnistui: " + error;
+    }
+}
+
+async function showSadeLearningReviews() {
+    const resultBox = document.getElementById("sade-learning-review-result");
+    resultBox.textContent = "Haetaan oppimiskatsauksia...";
+
+    try {
+        const response = await fetch("/learning/review/log", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                limit: 20
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "Katsausten haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.items || data.items.length === 0) {
+            resultBox.textContent = "Oppimiskatsauksia ei ole vielä.";
+            return;
+        }
+
+        resultBox.textContent = data.items.map(item =>
+            "📘 " + item.title + "\n" +
+            "Lähde: " + item.relative_path + "\n" +
+            "Review ID: " + item.review_id + "\n" +
+            "Käsitteet: " + (item.terms || []).slice(0, 10).join(", ")
+        ).join("\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "Katsausten haku epäonnistui: " + error;
+    }
+}
+</script>
+<!-- /Säde Learning Review UI v1 -->
+
+<!-- Säde RAG Engine UI v1 -->
+<section id="sade-rag-engine-section" style="margin-top: 32px;">
+    <h2>Lähteistä haku</h2>
+
+    <p style="margin-bottom: 10px;">
+        Tarkista, löytyykö vastaus Säteen muistista ja lähdeaineistoista vai pitääkö epävarmuus kertoa. Tekninen nimi: RAG Engine.
+    </p>
+
+    <label for="sade-rag-query">Mitä etsitään lähteistä?</label>
+    <input
+        id="sade-rag-query"
+        type="text"
+        placeholder="Esim. guardrails, operating manual, memory policy, FastAPI"
+        style="display:block; width:100%; margin-bottom: 10px;"
+    />
+
+    <button type="button" onclick="runSadeRagSearch()">Hae lähteistä</button>
+    <button type="button" onclick="showSadeRagStatus()">Näytä tekninen hakutila</button>
+
+    <pre id="sade-rag-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
+</section>
+
+<script>
+async function showSadeRagStatus() {
+    const resultBox = document.getElementById("sade-rag-result");
+    resultBox.textContent = "Haetaan RAG Engine -tilaa...";
+
+    try {
+        const response = await fetch("/rag/status");
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "RAG-tilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        resultBox.textContent =
+            "RAG Engine v1 on käytössä.\n\n" +
+            "Chat-logi oletuksena: " + data.chat_log_default + "\n" +
+            "Oletustulokset: " + data.default_n_results + "\n" +
+            "Semanttinen muisti OK: " + ((data.semantic_memory || {}).ok ? "kyllä" : "ei") + "\n\n" +
+            "Prioriteetit:\n" +
+            JSON.stringify(data.source_priorities, null, 2);
+
+    } catch (error) {
+        resultBox.textContent = "RAG-tilan haku epäonnistui: " + error;
+    }
+}
+
+async function runSadeRagSearch() {
+    const queryInput = document.getElementById("sade-rag-query");
+    const resultBox = document.getElementById("sade-rag-result");
+    const query = queryInput.value.trim();
+
+    if (!query) {
+        resultBox.textContent = "Kirjoita ensin hakusana.";
+        return;
+    }
+
+    resultBox.textContent = "Haetaan RAGilla...";
+
+    try {
+        const response = await fetch("/rag/search", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                query: query,
+                n_results: 8,
+                include_chat_log: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            resultBox.textContent = "RAG-haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            return;
+        }
+
+        if (!data.results || data.results.length === 0) {
+            resultBox.textContent = "Ei riittävän laadukkaita osumia.";
+            return;
+        }
+
+        resultBox.textContent = data.results.map(item =>
+            "#" + item.rank + " | " + item.source_type + " | score " + item.score + "\n" +
+            "Lähde: " + item.source + "\n" +
+            "Polku: " + (item.path || "") + "\n" +
+            "Otsikko: " + (item.title || "") + "\n" +
+            "Miksi: " + (item.reasons || []).join(", ") + "\n\n" +
+            (item.text || "").slice(0, 1200)
+        ).join("\n\n---\n\n");
+
+    } catch (error) {
+        resultBox.textContent = "RAG-haku epäonnistui: " + error;
+    }
+}
+</script>
+<!-- /Säde RAG Engine UI v1 -->
 
 </body>
 </html>

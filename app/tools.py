@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 from typing import Any, Dict, List, Optional
 
 
@@ -309,3 +311,25 @@ def project_status(project_path: Path) -> Dict[str, Any]:
         "time": datetime.now().isoformat(timespec="seconds"),
         "paths": {name: info(path) for name, path in important_paths.items()},
     }
+
+
+
+def resolve_project_path(relative_path: str) -> Path:
+    r"""
+    Palauttaa turvallisen polun projektin juuren sisältä.
+
+    Esimerkki:
+    docs/project_inventory.md
+    -> C:\Sade\Sade-v1\docs\project_inventory.md
+
+    Estää polut, jotka yrittävät karata projektikansion ulkopuolelle.
+    """
+    candidate = (PROJECT_ROOT / relative_path).resolve()
+
+    try:
+        candidate.relative_to(PROJECT_ROOT)
+    except ValueError as exc:
+        raise ValueError(f"Polku ei saa olla projektikansion ulkopuolella: {relative_path}") from exc
+
+    return candidate
+
