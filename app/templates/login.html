@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Kirjaudu — Säde v1</title>
+    <title>Sign in — Local AI Workspace</title>
     <style>
         :root { color-scheme: dark; --bg:#0b1020; --surface:#151d2f; --border:#2b3953; --text:#f4f7fb; --muted:#9eabc0; --accent:#fbbf24; --danger:#fca5a5; }
         * { box-sizing: border-box; }
@@ -23,14 +23,14 @@
 </head>
 <body>
     <main>
-        <h1>Säde v1</h1>
-        <p>Kirjaudu henkilökohtaiseen AI-työtilaasi.</p>
+        <h1>Local AI Workspace</h1>
+        <p>Sign in to your local AI workspace.</p>
         <form id="loginForm">
-            <label for="username">Käyttäjänimi</label>
+            <label for="username">Username</label>
             <input id="username" name="username" autocomplete="username" autocapitalize="none" required>
-            <label for="password">Salasana</label>
+            <label for="password">Password</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
-            <button id="loginButton" type="submit">Kirjaudu</button>
+            <button id="loginButton" type="submit">Sign in</button>
         </form>
         <div id="message" role="alert" aria-live="polite"></div>
     </main>
@@ -47,17 +47,17 @@
                 if (!data.configured) {
                     form.hidden = true;
                     message.className = "setup";
-                    message.innerHTML = "Kirjautumiskäyttäjä pitää luoda Säde-tietokoneella:<br><code>cd C:\\Sade\\Sade-v1<br>.\\.venv\\Scripts\\python.exe -m app.auth create-user jani</code>";
+                    message.innerHTML = "Create a local user before signing in:<br><code>cd C:\\Sade\\Sade-v1<br>.\\.venv\\Scripts\\python.exe -m app.auth create-user jani</code>";
                 }
             } catch (error) {
-                message.textContent = "Säde-palvelimeen ei saada yhteyttä.";
+                message.textContent = "The local server is not reachable.";
             }
         }
 
         form.addEventListener("submit", async event => {
             event.preventDefault();
             button.disabled = true;
-            message.textContent = "Kirjaudutaan…";
+            message.textContent = "Signing in…";
             try {
                 const response = await fetch("/auth/login", {
                     method:"POST",
@@ -66,11 +66,11 @@
                 });
                 const data = await response.json();
                 if (response.ok && data.ok) { location.replace("/ui"); return; }
-                message.textContent = data.message || data.detail || "Kirjautuminen epäonnistui.";
+                message.textContent = data.message || data.detail || "Sign-in failed.";
                 form.password.value = "";
                 form.password.focus();
             } catch (error) {
-                message.textContent = "Säde-palvelimeen ei saada yhteyttä.";
+                message.textContent = "The local server is not reachable.";
             } finally {
                 button.disabled = false;
             }

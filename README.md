@@ -1,8 +1,8 @@
-# Säde v1 — Local AI Workspace
+# Local AI Workspace
 
 [![Tests](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml)
 
-Säde v1 is a local-first AI workspace demonstrating modern AI engineering practices: FastAPI, local LLM integration, memory, retrieval, testing, security, and maintainable architecture.
+Local AI Workspace is a local-first AI assistant project demonstrating modern AI engineering practices: FastAPI, local LLM integration, memory, retrieval, testing, security, and maintainable architecture.
 
 It is designed as a portfolio-grade AI engineering project: it demonstrates not only model interaction, but also testability, memory governance, tool permissions, prompt-injection awareness, authentication, and release hygiene.
 
@@ -17,7 +17,7 @@ It is designed as a portfolio-grade AI engineering project: it demonstrates not 
 
 ## What this demonstrates to employers
 
-Säde v1 demonstrates practical AI engineering rather than only prompt experimentation:
+Local AI Workspace demonstrates practical AI engineering rather than only prompt experimentation:
 
 - local AI application architecture with FastAPI;
 - authentication, CSRF protection, audit logging, and guarded file tools;
@@ -62,9 +62,9 @@ More detail: [docs/architecture.md](docs/architecture.md)
 
 The current portfolio screenshots are:
 
-![Säde v1 desktop chat view](docs/screenshots/chat-desktop.png)
+![Local AI Workspace desktop chat view](docs/screenshots/chat-desktop.png)
 
-![Säde v1 mobile browser view](docs/screenshots/mobile-browser.jpg)
+![Local AI Workspace mobile browser view](docs/screenshots/mobile-browser.jpg)
 
 More screenshot notes: [docs/screenshots/README.md](docs/screenshots/README.md).
 
@@ -143,7 +143,7 @@ Try these in order:
 
 ## Safety model
 
-Säde v1 is intended for local or trusted-network use. Do not expose it directly to the public internet.
+Local AI Workspace is intended for local or trusted-network use. Do not expose it directly to the public internet.
 
 Safety principles:
 
@@ -168,7 +168,7 @@ See [SECURITY.md](SECURITY.md).
 
 ## Project status
 
-Säde v1 is a portfolio-stage AI assistant project. It is not a commercial SaaS product and should not be treated as production-ready infrastructure without additional hardening, deployment review, and operational monitoring.
+Local AI Workspace is a portfolio-stage AI assistant project. It is not a commercial SaaS product and should not be treated as production-ready infrastructure without additional hardening, deployment review, and operational monitoring.
 
 ## License
 

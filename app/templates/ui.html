@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Säde v1</title>
+    <title>Local AI Workspace</title>
     <script>
         (() => {
             const csrfToken = "__SADE_CSRF_TOKEN__";
@@ -82,7 +82,7 @@
         }
 
         .brand { padding: 0 10px 24px; }
-        .brand h1 { color: var(--accent); font-size: 25px; margin: 0 0 6px; }
+        .brand h1 { color: var(--accent); font-size: 22px; margin: 0 0 6px; line-height: 1.12; }
         .brand p { color: var(--muted); font-size: 13px; margin: 0; }
 
         .nav-tabs { display: grid; gap: 7px; }
@@ -208,7 +208,7 @@
             white-space: pre-wrap;
             margin-bottom: 16px;
         }
-        .chat-box:empty::before { content: "Aloita keskustelu Säteen kanssa."; color: var(--muted); }
+        .chat-box:empty::before { content: "Start a conversation with the assistant."; color: var(--muted); }
         .chat-composer { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
         .chat-composer textarea { min-height: 72px; max-height: 160px; margin-bottom: 10px; }
         .chat-hint { color: var(--muted); font-size: 12px; margin-left: auto; }
@@ -236,7 +236,7 @@
                 border-bottom: 1px solid var(--border);
             }
             .brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px 8px; }
-            .brand h1 { font-size: 19px; white-space: nowrap; }
+            .brand h1 { font-size: 16px; white-space: normal; }
             .brand p { font-size: 11px; text-align: right; }
             .nav-tabs { display: flex; overflow-x: auto; gap: 4px; padding: 0 0 2px; scrollbar-width: none; scroll-snap-type: x proximity; }
             .nav-tabs::-webkit-scrollbar { display: none; }
@@ -283,43 +283,43 @@
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand">
-                <h1>Säde v1</h1>
-                <p>Paikallinen AI-työtila</p>
+                <h1>Local AI Workspace</h1>
+                <p>Local-first AI assistant</p>
             </div>
-            <nav class="nav-tabs" aria-label="Päänavigaatio">
-                <button class="nav-tab active" data-tab="chat" aria-selected="true">Keskustelu</button>
-                <button class="nav-tab" data-tab="memory" aria-selected="false">Muisti</button>
-                <button class="nav-tab" data-tab="files" aria-selected="false">Aineistot</button>
-                <button class="nav-tab" data-tab="settings" aria-selected="false">Asetukset</button>
+            <nav class="nav-tabs" aria-label="Main navigation">
+                <button class="nav-tab active" data-tab="chat" aria-selected="true">Chat</button>
+                <button class="nav-tab" data-tab="memory" aria-selected="false">Memory</button>
+                <button class="nav-tab" data-tab="files" aria-selected="false">Sources</button>
+                <button class="nav-tab" data-tab="settings" aria-selected="false">Settings</button>
             </nav>
         </aside>
 
         <div class="workspace">
             <header class="topbar">
-                <div class="topbar-title" id="viewTitle">Keskustelu</div>
+                <div class="topbar-title" id="viewTitle">Chat</div>
                 <div class="runtime-status">
-                    <span class="status-chip" id="ollamaStatus">Ollama: tarkistetaan...</span>
-                    <span class="status-chip" id="configInfo">Asetukset latautuvat...</span>
-                    <button class="logout-button" type="button" onclick="logoutSade()">Kirjaudu ulos</button>
+                    <span class="status-chip" id="ollamaStatus">Ollama: checking...</span>
+                    <span class="status-chip" id="configInfo">Loading settings...</span>
+                    <button class="logout-button" type="button" onclick="logoutSade()">Log out</button>
                 </div>
             </header>
 
             <main>
                 <section class="tab-panel active" id="panel-chat" aria-labelledby="viewTitle">
                     <div class="panel-heading">
-                        <h2>Keskustele Säteen kanssa</h2>
-                        <p>Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.</p>
+                        <h2>Chat with the assistant</h2>
+                        <p>Chat is the main workspace. Tool commands can be used in the same input.</p>
                     </div>
                     <div class="chat-layout">
                         <div id="chatBox" class="chat-box" aria-live="polite"></div>
                         <div class="chat-composer">
-                            <label for="chatMessage">Viesti</label>
-                            <textarea id="chatMessage" placeholder="Kirjoita viesti Säde v1:lle..."></textarea>
+                            <label for="chatMessage">Message</label>
+                            <textarea id="chatMessage" placeholder="Write a message..."></textarea>
                             <div class="actions">
-                                <button id="sendChatButton" onclick="sendChat()">Lähetä</button>
-                                <button class="secondary" onclick="clearVisibleChat()">Tyhjennä näkyvä chat</button>
-                                <button class="secondary" onclick="saveVisibleChatToMemory()">Tallenna tämä keskustelu muistiin</button>
-                                <span class="chat-hint">Enter lähettää · Shift+Enter vaihtaa riviä</span>
+                                <button id="sendChatButton" onclick="sendChat()">Send</button>
+                                <button class="secondary" onclick="clearVisibleChat()">Clear visible chat</button>
+                                <button class="secondary" onclick="saveVisibleChatToMemory()">Save this conversation to memory</button>
+                                <span class="chat-hint">Enter sends · Shift+Enter adds a line</span>
                             </div>
                         </div>
                     </div>
@@ -327,136 +327,136 @@
 
                 <section class="tab-panel" id="panel-memory">
                     <div class="panel-heading">
-                        <h2>Muisti</h2>
-                        <p>Katso mitä Säde muistaa, lisää uusia muistoja ja vie muistisi talteen.</p>
+                        <h2>Memory</h2>
+                        <p>Review what the assistant remembers, add new memories, and export your memory.</p>
                     </div>
                     <div class="card-grid">
                         <div class="card">
-                            <h3>Lisää muistettava asia</h3>
-                            <label for="title">Otsikko</label>
-                            <input id="title" placeholder="Esim. Ensimmäinen keskustelu">
-                            <label for="tags">Tagit pilkulla erotettuna</label>
-                            <input id="tags" placeholder="esim. sade, muisto, kehitys">
-                            <label for="text">Mitä Säteen pitää muistaa?</label>
-                            <textarea id="text" placeholder="Kirjoita asia, jonka haluat Säteen muistavan..."></textarea>
-                            <button onclick="saveMemory()">Tallenna Säteen muistiin</button>
+                            <h3>Add a memory</h3>
+                            <label for="title">Title</label>
+                            <input id="title" placeholder="Example: First conversation">
+                            <label for="tags">Tags separated by commas</label>
+                            <input id="tags" placeholder="example: memory, development">
+                            <label for="text">What should the assistant remember?</label>
+                            <textarea id="text" placeholder="Write something you want the assistant to remember..."></textarea>
+                            <button onclick="saveMemory()">Save to memory</button>
                         </div>
                         <div class="card">
-                            <h3>Mitä Säde muistaa?</h3>
-                            <label for="memorySearchQuery">Hakusana</label>
-                            <input id="memorySearchQuery" placeholder="Esim. Jani, Säde v1, keskusteluloki">
+                            <h3>Memory browser</h3>
+                            <label for="memorySearchQuery">Search term</label>
+                            <input id="memorySearchQuery" placeholder="Example: project, memory, chat log">
                             <div class="actions">
-                                <button onclick="searchMemory()">Hae muistista</button>
-                                <button class="secondary" onclick="loadMemoryEntries()">Näytä mitä Säde muistaa</button>
-                                <button class="secondary" onclick="exportMemoryJson()">Vie muistini talteen</button>
-                                <button class="secondary" onclick="loadChatLog()">Näytä keskusteluloki</button>
+                                <button onclick="searchMemory()">Search memory</button>
+                                <button class="secondary" onclick="loadMemoryEntries()">Show saved memories</button>
+                                <button class="secondary" onclick="exportMemoryJson()">Export memory</button>
+                                <button class="secondary" onclick="loadChatLog()">Show chat log</button>
                             </div>
                             <pre id="memorySearchResults"></pre>
                         </div>
                     </div>
                     <details class="card">
-                        <summary><h3>Edistynyt: raakamuisti</h3></summary>
-                        <p class="small">Tekninen näkymä koko muistitedostoon. Yleensä “Näytä mitä Säde muistaa” riittää.</p>
-                        <button class="secondary" onclick="loadMemory()">Näytä raakamuisti</button>
-                        <pre id="memory">Muisti ladataan pyynnöstä.</pre>
+                        <summary><h3>Advanced: raw memory</h3></summary>
+                        <p class="small">Technical view of the full memory file. The memory browser is usually enough.</p>
+                        <button class="secondary" onclick="loadMemory()">Show raw memory</button>
+                        <pre id="memory">Memory loads on request.</pre>
                     </details>
                     <details class="card">
-                        <summary><h3>Edistynyt: keskusteluloki</h3></summary>
-                        <p class="small">Tekninen lokinäkymä. Avaa vain, jos haluat tarkistaa raakaa keskusteluhistoriaa.</p>
-                        <pre id="chatLog">Keskusteluloki ladataan pyynnöstä.</pre>
+                        <summary><h3>Advanced: chat log</h3></summary>
+                        <p class="small">Technical log view. Open only when you want to inspect raw conversation history.</p>
+                        <pre id="chatLog">Chat log loads on request.</pre>
                     </details>
                 </section>
 
                 <section class="tab-panel" id="panel-files">
-                    <div class="panel-heading"><h2>Aineistot</h2><p>Opeta Sädeä tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.</p></div>
-                    <div id="filesMount" class="section-placeholder">Tiedostotyökalut latautuvat...</div>
+                    <div class="panel-heading"><h2>Sources</h2><p>Teach the assistant with files: add a document, summarize it, and save the essentials to memory.</p></div>
+                    <div id="filesMount" class="section-placeholder">Source tools are loading...</div>
                 </section>
 
                 <section class="tab-panel" id="panel-settings">
-                    <div class="panel-heading"><h2>Asetukset</h2><p>Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.</p></div>
+                    <div class="panel-heading"><h2>Settings</h2><p>Model, system status, backups, and less frequent maintenance actions.</p></div>
                     <div class="card">
-                        <h3>Järjestelmän tila</h3>
+                        <h3>System status</h3>
                         <div class="actions">
-                            <button onclick="checkOllamaStatus()">Tarkista Ollama</button>
-                            <button class="secondary" onclick="loadSystemStatus()">Päivitä järjestelmän tila</button>
+                            <button onclick="checkOllamaStatus()">Check Ollama</button>
+                            <button class="secondary" onclick="loadSystemStatus()">Refresh system status</button>
                         </div>
-                        <pre id="systemStatus">Järjestelmän tila ladataan pyynnöstä.</pre>
+                        <pre id="systemStatus">System status loads on request.</pre>
                     </div>
                     <div class="card">
-                        <h3>Malliasetukset</h3>
+                        <h3>Model settings</h3>
                         <div class="card-grid">
                             <div>
-                                <label for="configLanguage" data-i18n="settings.languageLabel">Käyttöliittymän kieli</label>
+                                <label for="configLanguage" data-i18n="settings.languageLabel">Interface language</label>
                                 <select id="configLanguage">
-                                    <option value="fi">Suomi</option>
+                                    <option value="fi">Finnish</option>
                                     <option value="en">English</option>
                                 </select>
                             </div>
-                            <div><label for="configModel">Malli</label><input id="configModel" placeholder="esim. gpt-oss:20b"></div>
-                            <div><label for="configTemperature">Lämpötila</label><input id="configTemperature" type="number" step="0.1" min="0" max="2"></div>
-                            <div><label for="configNumCtx">Konteksti / num_ctx</label><input id="configNumCtx" type="number" min="512" step="512"></div>
-                            <div><label for="configMemoryChars">Säde-muistin muistimerkit</label><input id="configMemoryChars" type="number" min="500" step="500"></div>
-                            <div><label for="configChatChars">Keskustelulokin muistimerkit</label><input id="configChatChars" type="number" min="500" step="500"></div>
+                            <div><label for="configModel">Model</label><input id="configModel" placeholder="example: gpt-oss:20b"></div>
+                            <div><label for="configTemperature">Temperature</label><input id="configTemperature" type="number" step="0.1" min="0" max="2"></div>
+                            <div><label for="configNumCtx">Context / num_ctx</label><input id="configNumCtx" type="number" min="512" step="512"></div>
+                            <div><label for="configMemoryChars">Memory context characters</label><input id="configMemoryChars" type="number" min="500" step="500"></div>
+                            <div><label for="configChatChars">Chat log context characters</label><input id="configChatChars" type="number" min="500" step="500"></div>
                         </div>
-                        <button onclick="saveConfigSettings()">Tallenna asetukset</button>
+                        <button onclick="saveConfigSettings()">Save settings</button>
                     </div>
                     <details class="card">
-                        <summary><h3>Edistynyt: Säteen ydinprompti</h3></summary>
-                        <p class="small">Ydinpromptin muokkaus vaikuttaa Säteen käyttäytymiseen. Käytä vain kun tiedät mitä olet muuttamassa.</p>
+                        <summary><h3>Advanced: system prompt</h3></summary>
+                        <p class="small">Editing the system prompt changes assistant behavior. Use this only when you know what you are changing.</p>
                         <label for="systemPromptText">System prompt</label>
-                        <textarea id="systemPromptText" placeholder="Ydinprompti ladataan, kun avaat asetukset."></textarea>
+                        <textarea id="systemPromptText" placeholder="The system prompt loads when you open settings."></textarea>
                         <div class="actions">
-                            <button class="secondary" onclick="loadSystemPrompt()">Lataa ydinprompti</button>
-                            <button onclick="saveSystemPrompt()">Tallenna ydinprompti</button>
+                            <button class="secondary" onclick="loadSystemPrompt()">Load system prompt</button>
+                            <button onclick="saveSystemPrompt()">Save system prompt</button>
                         </div>
                     </details>
                     <details class="card" id="developerModeSection">
-                        <summary><h3>Edistynyt: tarkistus- ja kehittäjätyökalut</h3></summary>
-                        <p class="small">Konepellin alla olevat tarkistus-, laatu-, lähdehaku-, oppimis- ja tehtävätyökalut. Tavallinen käyttö ei yleensä tarvitse näitä.</p>
+                        <summary><h3>Advanced: review and developer tools</h3></summary>
+                        <p class="small">Under-the-hood review, quality, source-search, learning, and task tools. Normal use usually does not need these.</p>
                         <div class="developer-stack">
                             <details class="card" id="auditLogSection">
                                 <summary><h2>Audit Log</h2></summary>
-                                <p>Ketjutettu append-only-loki turvallisuuden kannalta merkittäville toiminnoille.</p>
+                                <p>Chained append-only log for security-relevant actions.</p>
                                 <div class="actions">
-                                    <button onclick="loadAuditStatus()">Tarkista eheys</button>
-                                    <button class="secondary" onclick="loadAuditLog()">Näytä viimeisimmät tapahtumat</button>
+                                    <button onclick="loadAuditStatus()">Check integrity</button>
+                                    <button class="secondary" onclick="loadAuditLog()">Show recent events</button>
                                 </div>
-                                <pre id="auditLogResult">Audit-loki ladataan pyynnöstä.</pre>
+                                <pre id="auditLogResult">Audit log loads on request.</pre>
                             </details>
                             <details class="card" id="aiQualitySection">
-                                <summary><h2>AI-laatu ja jäljitettävyys</h2></summary>
-                                <p>Staattiset evalit, live-evalien käynnistys ja kehittäjän trace-loki.</p>
+                                <summary><h2>AI quality and traceability</h2></summary>
+                                <p>Static evals, live eval entrypoints, and developer trace logs.</p>
                                 <div class="actions">
-                                    <button onclick="runStaticEvals()">Aja staattiset evalit</button>
-                                    <button class="secondary" onclick="runLiveEvals()">Aja live-evalit</button>
-                                    <button class="secondary" onclick="loadDebugTrace()">Näytä trace</button>
-                                    <button class="secondary" onclick="loadToolPolicies()">Työkalujen riskit</button>
+                                    <button onclick="runStaticEvals()">Run static evals</button>
+                                    <button class="secondary" onclick="runLiveEvals()">Run live evals</button>
+                                    <button class="secondary" onclick="loadDebugTrace()">Show trace</button>
+                                    <button class="secondary" onclick="loadToolPolicies()">Tool risks</button>
                                 </div>
-                                <pre id="aiQualityResult">AI-laadun tiedot ladataan pyynnöstä.</pre>
+                                <pre id="aiQualityResult">AI quality data loads on request.</pre>
                             </details>
                             <details class="card" id="languagePackSection">
-                                <summary><h2>Kielipaketin tekninen tila</h2></summary>
-                                <p>Suomen kielipaketin tila. Tavallisessa käytössä tämän kuuluu vain toimia taustalla.</p>
-                                <button onclick="loadLanguageStatus()">Näytä kielipaketin tila</button>
-                                <pre id="languagePackResult">Kielipaketin tila ladataan pyynnöstä.</pre>
+                                <summary><h2>Language pack technical status</h2></summary>
+                                <p>Language-pack status. In normal use, this should simply work in the background.</p>
+                                <button onclick="loadLanguageStatus()">Show language-pack status</button>
+                                <pre id="languagePackResult">Language-pack status loads on request.</pre>
                             </details>
                             <details class="card" id="developerAdvancedTools" open>
-                                <summary><h2>Edistyneet työkalut</h2></summary>
-                                <div id="developmentMount" class="section-placeholder">Kehitystyökalut latautuvat...</div>
+                                <summary><h2>Advanced tools</h2></summary>
+                                <div id="developmentMount" class="section-placeholder">Developer tools are loading...</div>
                             </details>
                         </div>
                     </details>
                     <div class="card">
-                        <h3>Vienti ja varmuuskopiointi</h3>
+                        <h3>Export and backups</h3>
                         <div class="actions">
-                            <button onclick="createExport()">Luo vientitiedosto</button>
-                            <button onclick="createBackup()">Luo varmuuskopio</button>
-                            <button class="secondary" onclick="createBackupArchive()">Luo zip-varmuuskopio</button>
-                            <button class="secondary" onclick="listBackups()">Listaa varmuuskopiot</button>
+                            <button onclick="createExport()">Create export file</button>
+                            <button onclick="createBackup()">Create backup</button>
+                            <button class="secondary" onclick="createBackupArchive()">Create zip backup</button>
+                            <button class="secondary" onclick="listBackups()">List backups</button>
                         </div>
-                        <p class="small" id="exportStatus">Export: ei luotu vielä</p>
-                        <p class="small" id="backupStatus">Backup: ei luotu vielä</p>
-                        <pre id="backupList">Varmuuskopiot ladataan pyynnöstä.</pre>
+                        <p class="small" id="exportStatus">Export: not created yet</p>
+                        <p class="small" id="backupStatus">Backup: not created yet</p>
+                        <pre id="backupList">Backups load on request.</pre>
                     </div>
                 </section>
 
@@ -473,16 +473,16 @@
             navMemory: "Muisti",
             navFiles: "Aineistot",
             navSettings: "Asetukset",
-            chatTitle: "Keskustele Säteen kanssa",
+            chatTitle: "Keskustele avustajan kanssa",
             chatLead: "Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.",
             messageLabel: "Viesti",
             send: "Lähetä",
             clearChat: "Tyhjennä näkyvä chat",
             saveConversation: "Tallenna tämä keskustelu muistiin",
             memoryTitle: "Muisti",
-            memoryLead: "Katso mitä Säde muistaa, lisää uusia muistoja ja vie muistisi talteen.",
+            memoryLead: "Katso mitä avustaja muistaa, lisää uusia muistoja ja vie muistisi talteen.",
             filesTitle: "Aineistot",
-            filesLead: "Opeta Sädeä tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.",
+            filesLead: "Opeta avustajaa tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.",
             settingsTitle: "Asetukset",
             settingsLead: "Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.",
             languageLabel: "Käyttöliittymän kieli",
@@ -491,21 +491,21 @@
             modelWord: "Malli"
         },
         en: {
-            appSubtitle: "Local AI workspace",
+            appSubtitle: "Local-first AI assistant",
             navChat: "Chat",
             navMemory: "Memory",
             navFiles: "Sources",
             navSettings: "Settings",
-            chatTitle: "Chat with Säde",
+            chatTitle: "Chat with the assistant",
             chatLead: "Chat is the main workspace. Tool commands can be used in the same input.",
             messageLabel: "Message",
             send: "Send",
             clearChat: "Clear visible chat",
             saveConversation: "Save this conversation to memory",
             memoryTitle: "Memory",
-            memoryLead: "Review what Säde remembers, add new memories, and export your memory.",
+            memoryLead: "Review what the assistant remembers, add new memories, and export your memory.",
             filesTitle: "Sources",
-            filesLead: "Teach Säde with files: add a document, summarize it, and save the essentials to memory.",
+            filesLead: "Teach the assistant with files: add a document, summarize it, and save the essentials to memory.",
             settingsTitle: "Settings",
             settingsLead: "Model, system status, backups, and less frequent maintenance actions.",
             languageLabel: "Interface language",
@@ -586,7 +586,7 @@
     function clearVisibleChat() {
         const chatBox = document.getElementById("chatBox");
         chatBox.innerHTML = "";
-        document.getElementById("status").innerText = "Näkyvä chat tyhjennetty. Keskusteluloki säilyy tallessa.";
+        document.getElementById("status").innerText = "Visible chat cleared. The chat log is still saved.";
     }
 
 async function saveVisibleChatToMemory() {
@@ -594,7 +594,7 @@ async function saveVisibleChatToMemory() {
     const content = chatBox.innerText.trim();
 
     if (!content) {
-        document.getElementById("status").innerText = "Näkyvä chat on tyhjä, ei tallennettavaa.";
+        document.getElementById("status").innerText = "Visible chat is empty; nothing to save.";
         return;
     }
 
@@ -612,14 +612,14 @@ async function saveVisibleChatToMemory() {
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById("status").innerText = "Nykyinen keskustelu tallennettu Säde-muistiin.";
+            document.getElementById("status").innerText = "Current conversation saved to memory.";
             loadMemory();
         } else {
-            document.getElementById("status").innerText = "Virhe: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Error: " + JSON.stringify(data);
         }
 
     } catch (error) {
-        document.getElementById("status").innerText = "Yhteysvirhe: " + error;
+        document.getElementById("status").innerText = "Connection error: " + error;
     }
 }
 
@@ -630,11 +630,11 @@ async function searchMemory() {
     const query = queryBox.value.trim();
 
     if (!query) {
-        document.getElementById("status").innerText = "Kirjoita hakusana ensin.";
+        document.getElementById("status").innerText = "Enter a search term first.";
         return;
     }
 
-    document.getElementById("status").innerText = "Haetaan Säde-muistista...";
+    document.getElementById("status").innerText = "Searching memory...";
 
     try {
         const response = await fetch("/memory/search", {
@@ -651,74 +651,74 @@ async function searchMemory() {
 
         if (response.ok) {
             if (data.count === 0) {
-                resultsBox.innerText = "Ei osumia haulla: " + query;
-                document.getElementById("status").innerText = "Ei osumia.";
+                resultsBox.innerText = "No matches for: " + query;
+                document.getElementById("status").innerText = "No matches.";
                 return;
             }
 
             let output = "";
-            output += "Hakusana: " + data.query + "\n";
-            output += "Osumia: " + data.count + "\n\n";
+            output += "Search term: " + data.query + "\n";
+            output += "Matches: " + data.count + "\n\n";
 
             data.results.forEach((item, index) => {
                 output += "---\n";
-                output += "Tulos " + (index + 1) + " / rivi " + item.line + "\n\n";
+                output += "Result " + (index + 1) + " / line " + item.line + "\n\n";
                 output += item.snippet + "\n\n";
             });
 
             resultsBox.innerText = output;
             resultsBox.scrollTop = 0;
 
-            document.getElementById("status").innerText = "Haku valmis.";
+            document.getElementById("status").innerText = "Search complete.";
         } else {
-            resultsBox.innerText = "Virhe: " + JSON.stringify(data);
-            document.getElementById("status").innerText = "Haku epäonnistui.";
+            resultsBox.innerText = "Error: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Search failed.";
         }
 
     } catch (error) {
-        resultsBox.innerText = "Yhteysvirhe: " + error;
-        document.getElementById("status").innerText = "Yhteysvirhe haussa.";
+        resultsBox.innerText = "Connection error: " + error;
+        document.getElementById("status").innerText = "Connection error during search.";
     }
 }
 
 async function loadMemoryEntries() {
     const resultsBox = document.getElementById("memorySearchResults");
-    document.getElementById("status").innerText = "Ladataan muistimerkintöjä...";
+    document.getElementById("status").innerText = "Loading memory entries...";
     try {
         const response = await fetch("/memory/entries?limit=50");
         const data = await response.json();
         if (!response.ok || !data.ok) {
-            resultsBox.innerText = "Muistimerkintöjen lataus epäonnistui: " + JSON.stringify(data);
+            resultsBox.innerText = "Loading memory entries failed: " + JSON.stringify(data);
             return;
         }
-        let output = "Muistimerkintöjä: " + data.count + "\n\n";
+        let output = "Memory entries: " + data.count + "\n\n";
         (data.entries || []).forEach((item, index) => {
             output += (index + 1) + ". " + item.title + "\n";
             output += "ID: " + item.id + "\n";
-            if (item.time) output += "Aika: " + item.time + "\n";
+            if (item.time) output += "Time: " + item.time + "\n";
             output += item.preview + "\n\n---\n\n";
         });
-        resultsBox.innerText = output || "Ei muistimerkintöjä.";
-        document.getElementById("status").innerText = "Muistimerkinnät ladattu.";
+        resultsBox.innerText = output || "No memory entries.";
+        document.getElementById("status").innerText = "Memory entries loaded.";
     } catch (error) {
-        resultsBox.innerText = "Yhteysvirhe: " + error;
+        resultsBox.innerText = "Connection error: " + error;
     }
 }
 
 async function exportMemoryJson() {
     const resultsBox = document.getElementById("memorySearchResults");
-    document.getElementById("status").innerText = "Viedään muistia JSON-muotoon...";
+    document.getElementById("status").innerText = "Exporting memory as JSON...";
     try {
         const response = await fetch("/memory/export", { method: "POST" });
         const data = await response.json();
         if (response.ok && data.ok) {
-            resultsBox.innerText = "Muisti viety JSON-muotoon ✅\n" + data.path + "\nMerkintöjä: " + data.count;
-            document.getElementById("status").innerText = "Muistin vienti valmis.";
+            resultsBox.innerText = "Memory exported as JSON ✅\n" + data.path + "\nEntries: " + data.count;
+            document.getElementById("status").innerText = "Memory export complete.";
         } else {
-            resultsBox.innerText = "Muistin vienti epäonnistui: " + JSON.stringify(data);
+            resultsBox.innerText = "Memory export failed: " + JSON.stringify(data);
         }
     } catch (error) {
-        resultsBox.innerText = "Yhteysvirhe: " + error;
+        resultsBox.innerText = "Connection error: " + error;
     }
 }
 async function sendChat() {
@@ -727,15 +727,15 @@ async function sendChat() {
         const message = messageBox.value.trim();
 
         if (!message) {
-            document.getElementById("status").innerText = "Kirjoita ensin viesti.";
+            document.getElementById("status").innerText = "Write a message first.";
             return;
         }
 
-        addChatLine("Sinä", message);
+        addChatLine("You", message);
         messageBox.value = "";
-        document.getElementById("status").innerText = "Säde ajattelee...";
+        document.getElementById("status").innerText = "Assistant is thinking...";
         sendButton.disabled = true;
-        sendButton.innerText = "Säde ajattelee...";
+        sendButton.innerText = "Thinking...";
 
         try {
             const response = await fetch("/chat", {
@@ -751,18 +751,18 @@ async function sendChat() {
             const data = await response.json();
 
             if (response.ok) {
-                addChatLine("Säde", data.reply);
+                addChatLine("Assistant", data.reply);
                 addChatActions(data.actions);
-                document.getElementById("status").innerText = "Vastaus valmis.";
+                document.getElementById("status").innerText = "Reply ready.";
             } else {
-                document.getElementById("status").innerText = "Virhe: " + JSON.stringify(data);
+                document.getElementById("status").innerText = "Error: " + JSON.stringify(data);
             }
 
         } catch (error) {
-            document.getElementById("status").innerText = "Yhteysvirhe: " + error;
+            document.getElementById("status").innerText = "Connection error: " + error;
         } finally {
             sendButton.disabled = false;
-            sendButton.innerText = "Lähetä";
+            sendButton.innerText = "Send";
             messageBox.focus();
         }
     }
@@ -791,11 +791,11 @@ async function sendChat() {
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById("status").innerText = "Tallennettu: " + data.title;
+            document.getElementById("status").innerText = "Saved: " + data.title;
             document.getElementById("text").value = "";
             loadMemory();
         } else {
-            document.getElementById("status").innerText = "Virhe: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Error: " + JSON.stringify(data);
         }
     }
 
@@ -808,7 +808,7 @@ async function sendChat() {
         memoryBox.innerText = data.content;
         memoryBox.scrollTop = memoryBox.scrollHeight;
 
-        document.getElementById("status").innerText = "Säde-muisti ladattu.";
+        document.getElementById("status").innerText = "Memory loaded.";
     } else {
         document.getElementById("memory").innerText = data.message;
     }
@@ -835,7 +835,7 @@ async function sendChat() {
 
 async function checkOllamaStatus() {
     const statusBox = document.getElementById("ollamaStatus");
-    statusBox.innerText = "Ollama: tarkistetaan...";
+    statusBox.innerText = "Ollama: checking...";
 
     try {
         const response = await fetch("/ollama/status");
@@ -843,18 +843,18 @@ async function checkOllamaStatus() {
 
         if (response.ok && data.ok) {
             statusBox.innerText =
-                "Ollama: connected ✅ / malli: " +
+                "Ollama: connected ✅ / model: " +
                 data.model +
-                " / vastausaika: " +
+                " / response time: " +
                 data.duration_seconds.toFixed(2) +
                 " s";
         } else {
             statusBox.innerText =
-                "Ollama: ei yhteyttä ❌ / " +
+                "Ollama: not connected ❌ / " +
                 (data.message || JSON.stringify(data));
         }
     } catch (error) {
-        statusBox.innerText = "Ollama: yhteysvirhe ❌ " + error;
+        statusBox.innerText = "Ollama: connection error ❌ " + error;
     }
 }
 
@@ -886,9 +886,9 @@ async function loadConfigInfo() {
 
         infoBox.innerText =
             t("modelWord") + ": " + data.ollama_model +
-            " / lämpötila: " + data.temperature +
-            " / konteksti: " + data.num_ctx +
-            " / muisti: " + data.memory_context_chars +
+            " / temperature: " + data.temperature +
+            " / context: " + data.num_ctx +
+            " / memory: " + data.memory_context_chars +
             " / chat: " + data.chat_context_chars;
 
     } catch (error) {
@@ -1042,11 +1042,11 @@ async function loadSystemStatus() {
 
         let output = "";
 
-        output += "Säde server: " + data.server + " ✅\n";
-        output += "Aika: " + data.time + "\n\n";
+        output += "Server: " + data.server + " ✅\n";
+        output += "Time: " + data.time + "\n\n";
 
-        output += "Malli: " + data.model + "\n";
-        output += "Konteksti / num_ctx: " + data.num_ctx + "\n\n";
+        output += "Model: " + data.model + "\n";
+        output += "Context / num_ctx: " + data.num_ctx + "\n\n";
 
         output += "Project path: " + (data.project.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
         output += data.project.path + "\n\n";
@@ -1054,7 +1054,7 @@ async function loadSystemStatus() {
         output += "Memory path: " + (data.memory.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
         output += data.memory.path + "\n\n";
 
-        output += "Säde-muisti: " + (data.sade_memory.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "Assistant memory: " + (data.sade_memory.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.sade_memory.path + "\n";
         output += "Koko: " + data.sade_memory.size_bytes + " bytes\n\n";
 
@@ -1263,7 +1263,7 @@ function initializeWorkspace() {
             document.querySelectorAll(".tab-panel").forEach(panel => {
                 panel.classList.toggle("active", panel.id === "panel-" + tabName);
             });
-            document.getElementById("viewTitle").innerText = document.querySelector(".nav-tab.active")?.innerText || titles[tabName] || "Säde v1";
+            document.getElementById("viewTitle").innerText = document.querySelector(".nav-tab.active")?.innerText || titles[tabName] || "Local AI Workspace";
             window.scrollTo({top: 0, behavior: "smooth"});
 
             if (tabName === "settings" && !button.dataset.loaded) {

@@ -1,13 +1,13 @@
-# Säde v1 Architecture
+# Local AI Workspace Architecture
 
-Säde v1 is a local-first AI workspace built around a FastAPI backend, browser UI, local model provider, memory, RAG, audit logging, and safety policies.
+Local AI Workspace is built around a FastAPI backend, browser UI, local model provider, memory, RAG, audit logging, and safety policies.
 
 ```mermaid
 flowchart LR
     UI["Browser UI"] --> API["FastAPI app"]
     API --> Auth["Auth + CSRF"]
     API --> Router["Tool Router"]
-    API --> Memory["Säde Memory"]
+    API --> Memory["Memory"]
     API --> RAG["RAG Engine"]
     API --> Search["Web Search"]
     API --> Audit["Audit Log"]

@@ -25,11 +25,11 @@ def test_release_readiness_files_exist() -> None:
 def test_readme_is_utf8_and_mentions_core_workflows() -> None:
     text = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "Säde v1" in text
+    assert "Local AI Workspace" in text
     assert "pytest" in text
     assert "/evals/static" in text
     assert "/backup/archive" in text
-    assert "Kirjautumissuojaus" in text or "kirjautumissuojaus" in text
+    assert "authentication" in text.lower()
 
 
 def test_env_overrides_config(monkeypatch) -> None:

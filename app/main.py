@@ -141,7 +141,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="S\u00e4de v1", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title="Local AI Workspace", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 PROJECT_PATH = Path(__file__).resolve().parent
 BASE_PATH = PROJECT_PATH
@@ -959,9 +959,9 @@ def root():
     config = load_config()
 
     return {
-        "name": "Säde v1",
+        "name": "Local AI Workspace",
         "status": "awake",
-        "message": "Säde v1 toimii.",
+        "message": "Local AI Workspace is running.",
         "model": config.get("ollama_model", "gpt-oss:20b"),
         "paths": {
             "base": str(BASE_PATH),

@@ -49,19 +49,19 @@ def test_ui_uses_simplified_user_navigation() -> None:
     assert 'data-tab="development"' not in html
     assert 'data-tab="tasks"' not in html
     assert 'id="panel-tasks"' not in html
-    assert "Aineistot" in nav
-    assert "Asetukset" in nav
-    assert "Kehittäjä" not in nav
-    assert "Edistynyt: tarkistus- ja kehittäjätyökalut" in html
-    assert "Lisää muistettava asia" in html
-    assert "Näytä mitä Säde muistaa" in html
-    assert "Opeta Sädeä tiedostolla" in html
-    assert "Lähteistä haku" in html
+    assert "Sources" in nav
+    assert "Settings" in nav
+    assert "Developer" not in nav
+    assert "Advanced: review and developer tools" in html
+    assert "Add a memory" in html
+    assert "Show saved memories" in html
+    assert "Teach the assistant with files" in html
+    assert "RAG Engine" in html
     assert "const I18N" in html
     assert "Interface language" in html
     assert 'id="configLanguage"' in html
-    assert "Muisti ladataan pyynnöstä." in html
-    assert "Enter lähettää · Shift+Enter vaihtaa riviä" in html
+    assert "Memory loads on request." in html
+    assert "Enter sends" in html
     assert "sade-task-section" in html
     assert '"sade-task-section", "sade-dev-section"' in html
 
@@ -77,11 +77,11 @@ def test_ui_has_mobile_viewport_and_compact_chat_layout() -> None:
     assert "height: clamp(250px, 44dvh, 430px)" in html
     assert ".chat-composer .actions #sendChatButton" in html
     assert "__SADE_CSRF_TOKEN__" in html
-    assert "Kirjaudu ulos" in html
+    assert "Log out" in html
     assert "loadMemoryEntries()" in html
     assert "exportMemoryJson()" in html
     assert "createBackupArchive()" in html
     assert "runStaticEvals()" in html
     assert "runLiveEvals()" in html
-    assert "Edistynyt: Säteen ydinprompti" in html
-    assert "Kielipaketin tekninen tila" in html
+    assert "System prompt" in html
+    assert "Language pack technical status" in html

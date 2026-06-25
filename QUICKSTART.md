@@ -1,4 +1,4 @@
-# Quickstart — Säde v1
+# Quickstart — Local AI Workspace
 
 ## 1. Siirry projektikansioon
 
@@ -37,4 +37,3 @@ http://127.0.0.1:8080/ui
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
-

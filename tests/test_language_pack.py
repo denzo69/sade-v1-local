@@ -47,12 +47,12 @@ def test_language_pack_is_integrated_into_main_prompt(monkeypatch) -> None:
     assert language_status(PROJECT_ROOT)["policy_exists"] is True
 
 
-def test_ui_is_finnish_and_has_no_encoding_damage() -> None:
+def test_ui_defaults_to_english_and_has_no_encoding_damage() -> None:
     ui = (Path(__file__).parents[1] / "app" / "templates" / "ui.html").read_text(encoding="utf-8")
     nav = ui.split('<nav class="nav-tabs"', 1)[1].split("</nav>", 1)[0]
 
-    assert '<html lang="fi">' in ui
-    assert all(label in ui for label in ("Keskustelu", "Muisti", "Aineistot", "Asetukset", "kehittäjätyökalut"))
-    assert "Tehtävät" not in nav
-    assert "Kehittäjä" not in nav
+    assert '<html lang="en">' in ui
+    assert all(label in ui for label in ("Chat", "Memory", "Sources", "Settings", "developer tools"))
+    assert "Tasks" not in nav
+    assert "Developer" not in nav
     assert inspect_text(ui)["ok"] is True
