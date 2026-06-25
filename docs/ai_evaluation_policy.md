@@ -1,24 +1,17 @@
-# Säde AI Evaluation Policy v1
+# AI Evaluation Policy
 
-Säde v1 käyttää kahta testitasoa:
+Local AI Workspace uses evaluation tests to verify behavior that ordinary unit tests do not fully cover.
 
-1. tavalliset yksikkö- ja integraatiotestit
-2. AI-käytösevalit, jotka tarkistavat turvallisuuden, totuusrajan ja työkalupolitiikan
+The first evaluation layer is intentionally deterministic. It checks that safety policies, retrieval boundaries, tool-risk metadata, and refusal behavior are present and testable without requiring a live model provider.
 
-Ensimmäinen toteutus on staattinen: evalit eivät vaadi live-mallia tai Ollamaa. Tämä varmistaa, että projektin suojakerrokset ovat olemassa ja testattavissa jokaisella `pytest`-ajolla.
+## Evaluation targets
 
-Nykyiset eval-kohteet:
+- Truth-boundary handling when no source is available.
+- Prompt-injection and instruction-override resistance.
+- Tool-risk classification before execution.
+- RAG quality checks for source-aware answers.
+- Memory behavior that avoids silently storing unreviewed data.
 
-- prompt injection -yritysten tunnistus
-- salaisuuksiin ja `auth.json`-tiedostoon kohdistuvien pyyntöjen riskimerkintä
-- työkalujen riskitasojen tarkistus
-- RAG-haun epävarmuusraja silloin, kun lähteitä ei löydy
+## Rule
 
-Pääreitit:
-
-- `GET /evals/static`
-- `POST /security/prompt-injection/analyze`
-- `POST /rag/quality`
-
-Totuusraja: staattinen eval ei todista mallin vastausten laatua kaikissa tilanteissa. Se todistaa, että turva- ja arviointikerros on teknisesti olemassa. Live-mallin laatuevalit voidaan lisätä myöhemmin erillisenä kerroksena.
-
+An AI feature should not be described as production-ready unless it has a matching evaluation or integration test.

@@ -1,34 +1,18 @@
-# Säde Backup and Restore Policy v1
+# Backup and Restore Policy
 
-Säde v1 suojaa muistia ja projektin dokumentaatiota zip-varmuuskopioilla.
+Local AI Workspace includes backup and restore support for local memory and documentation data.
 
-Varmuuskopio sisältää:
+## Backup scope
 
-- `memory/`-kansion teksti-, JSON- ja JSONL-tiedostoja
-- `docs/`-kansion dokumentteja
-- projektin konfiguraatiotiedostoja
+Backups may include:
 
-Varmuuskopio ei sisällä:
+- local memory files,
+- project documentation,
+- selected configuration files,
+- audit metadata required for recovery review.
 
-- `auth.json`
-- `auth_sessions.json`
-- vektorikannan binäärihakemistoja
+Backups must not be committed to Git.
 
-Pääreitit:
+## Restore rule
 
-- `GET /backup/list`
-- `POST /backup/archive`
-- `POST /backup/restore`
-
-Palautus vaatii täsmällisen vahvistuslauseen:
-
-```text
-HYVÄKSYN VARMUUSKOPION PALAUTUKSEN
-```
-
-Toteutus:
-
-- `app/backup_restore.py`
-
-Periaate: palautus on korkean riskin toiminto ja se kirjataan audit-logiin.
-
+Restore is a high-risk operation. It should require explicit user intent, be audit logged, and preserve a clear rollback path when possible.

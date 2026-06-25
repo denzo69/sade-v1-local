@@ -1,26 +1,15 @@
-# Säde Observability Policy v1
+# Observability Policy
 
-Säde v1:n kehittäjän jäljitettävyys tallentaa kevyen trace-lokin siitä, miten chat-pyyntö käsiteltiin.
+Observability explains why the system made a decision.
 
-Trace ei saa sisältää salasanoja, sessiotokeneita, API-avaimia tai muita salaisuuksia. Tiedot redaktoidaan ennen tallennusta.
+## Useful trace fields
 
-Trace-lokiin kirjataan esimerkiksi:
+- User request category.
+- Selected module or tool.
+- Policy decision.
+- Source documents used.
+- Error state and safe fallback.
 
-- pyynnön aikaleima
-- viestin lyhyt esikatselu
-- viestin hash
-- valittu reitti
-- työkalun nimi
-- prompt injection -analyysin tulos
-- mallireitin vastausmerkkien määrä
+## Privacy rule
 
-Pääreitti:
-
-- `GET /debug/trace`
-
-Toteutus:
-
-- `app/debug_trace.py`
-
-Totuusraja: trace-loki ei ole sama kuin audit-log. Audit-log todistaa turvallisuus- ja kirjoitustoimintoja. Trace auttaa ymmärtämään päätöspolkua kehityksen aikana.
-
+Debug traces must be useful without leaking secrets, passwords, session IDs, or full private memory contents.

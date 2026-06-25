@@ -1,23 +1,14 @@
-# Säde Model Provider Policy v1
+# Model Provider Policy
 
-Säde v1 käyttää mallikutsuihin erillistä provider-kerrosta.
+The application should isolate model-provider calls behind a provider layer so local and remote models can be swapped without rewriting the rest of the app.
 
-Nykyinen provider:
+## Goals
 
-- `ollama`
+- Keep prompt construction separate from transport details.
+- Make provider configuration explicit.
+- Avoid hard-coding one model backend into unrelated modules.
+- Keep error messages clear when the provider is unavailable.
 
-Tavoite:
+## Portfolio value
 
-- muu sovellus ei ole suoraan sidottu yksittäiseen mallibackendiin
-- myöhemmin voidaan lisätä toinen paikallinen malli tai API-pohjainen provider ilman koko sovelluksen uudelleenkirjoitusta
-
-Pääreitti:
-
-- `GET /model/status`
-
-Toteutus:
-
-- `app/model_provider.py`
-
-Totuusraja: v1 ei vielä sisällä useita provider-toteutuksia. Se sisältää vaihtokerroksen ja Ollama-providerin.
-
+This demonstrates maintainable AI application architecture rather than a one-off model integration.

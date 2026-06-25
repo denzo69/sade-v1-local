@@ -1,30 +1,14 @@
-# Säde Memory Governance Policy v1
+# Memory Governance Policy
 
-Säde v1 antaa käyttäjälle hallinnan pitkäaikaiseen muistiin.
+Memory governance covers how local memories are listed, exported, and deleted.
 
-Nykyiset toiminnot:
+## User controls
 
-- näytä muistimerkinnät
-- vie muisti JSON-muotoon
-- poista yksittäinen muistimerkintä vahvistuksella
+- View saved memory entries.
+- Export memory as JSON.
+- Delete a specific memory entry with confirmation.
+- Keep private memory files out of Git.
 
-Pääreitit:
+## Privacy rule
 
-- `GET /memory/entries`
-- `POST /memory/export`
-- `POST /memory/delete-entry`
-
-Poisto vaatii täsmällisen vahvistuslauseen:
-
-```text
-HYVÄKSYN MUISTIMERKINNÄN POISTON
-```
-
-Ennen poistoa alkuperäisestä `sade_memory.md`-tiedostosta tehdään varmuuskopio.
-
-Toteutus:
-
-- `app/memory_governance.py`
-
-Totuusraja: tämä koskee markdown-pohjaista Säde-muistia. Semanttisen vektorimuistin huolto tehdään erillisellä `memory_cleaner.py`-moduulilla.
-
+Memory data belongs to the local user. The portfolio repository should demonstrate the mechanism, not publish real memories.

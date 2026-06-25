@@ -1,49 +1,19 @@
-# Säde Audit Log Policy v1
+# Audit Log Policy
 
-Päivitetty: 2026-06-21  
-Tila: active
+Audit logging records security-relevant actions in a way that is useful for debugging and review without exposing secrets.
 
-## Tarkoitus
+## Logged events
 
-Audit-loki tekee turvallisuuden kannalta merkittävistä toiminnoista jäljitettäviä. Se ei ole keskustelumuisti, analytiikkaloki eikä lupa toiminnon suorittamiseen.
+- Authentication events.
+- Tool execution decisions.
+- Memory writes, deletes, exports, backups, and restores.
+- High-risk or denied actions.
+- Debug-trace events relevant to developer review.
 
-## Periaatteet
+## Redaction rule
 
-- Loki on append-only: sovellus lisää rivejä mutta ei muokkaa tai tyhjennä niitä.
-- Jokainen rivi sisältää edellisen rivin hashin. Ketjun katkeaminen tai rivin muuttuminen näkyy eheystarkistuksessa.
-- Auditointi ei korvaa käyttäjän hyväksyntää, guardraileja tai tiedostopolkujen tarkistuksia.
-- Audit-loki ei tallenna viestien, tiedostojen tai system promptin raakasisältöä.
-- Salaisuuksiin viittaavat avaimet sekä sisältökentät sensuroidaan automaattisesti.
-- Eheydeltään rikkoutuneeseen lokiin ei lisätä uusia tapahtumia ennen tilanteen tutkimista.
+Audit logs must not store passwords, session IDs, CSRF tokens, raw secrets, or full private memory contents.
 
-## Kirjattavat tapahtumat
+## Integrity rule
 
-Vähintään seuraavat kirjataan yrityksenä ja lopputuloksena:
-
-- asetusten tai system promptin muuttaminen,
-- tiedoston kirjoittaminen, append ja upload,
-- semanttisen indeksin uudelleenrakennus,
-- tehtävän suorittaminen tai peruminen,
-- työkalureitittimen käsittelemä toiminto,
-- vienti ja varmuuskopiointi,
-- estetty tai epäonnistunut turvallisuuskriittinen toiminto.
-
-Pelkkää lukemista ja tavallista keskustelua ei tarvitse kirjata, ellei siihen liity työkalutoimintoa tai turvallisuuspoikkeamaa.
-
-## Tietomalli
-
-Jokainen JSONL-rivi sisältää vähintään `sequence`, `time`, `actor`, `category`, `action`, `outcome`, `risk_level`, `reason`, `target`, turvalliseksi rajatut `details`, `previous_hash` ja `event_hash`.
-
-## Rajapinnat
-
-- `GET /audit/status` tarkistaa ketjun eheyden.
-- `POST /audit/log` lukee rajatun määrän viimeisimpiä tapahtumia.
-- Tyhjennysrajapintaa ei tarjota.
-
-## Säilytys ja huolto
-
-Lokitiedosto sijaitsee polussa `app/memory/audit_log.jsonl`. Arkistointi tehdään myöhemmin erillisellä, käyttäjän hyväksymällä menettelyllä. Arkistointia ei saa toteuttaa hiljaisena poistona.
-
-## Totuusraja
-
-Hash-ketju havaitsee tavalliset jälkikäteiset muutokset, mutta se ei ole ulkoisesti allekirjoitettu tai hyökkääjältä suojattu todistus. Paikallisen järjestelmän täydet kirjoitusoikeudet saanut toimija voi periaatteessa rakentaa ketjun uudelleen.
+Each important action should be explainable after the fact: what was requested, what policy was applied, and whether the action was allowed or denied.

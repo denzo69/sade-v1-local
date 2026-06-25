@@ -1,8 +1,14 @@
-# Learning Feedback Policy v1
+# Learning Feedback Policy
 
-Oppimispalaute tallentaa käyttäjän eksplisiittiset korjaukset rakenteisina esimerkkeinä. Se ei muuta mallin painoja eikä kirjoita palautetta automaattisesti semanttiseen muistiin.
+Learning feedback lets a user mark a correction or improvement as useful for future behavior.
 
-Muoto chatissa: `korjaus: aiempi väite -> oikea muoto`.
+## Rules
 
-Salaisuudet sensuroidaan, kirjoitus auditoidaan ennen ja jälkeen, ja käyttäjän korjausta sovelletaan vain tilanteissa, joihin se oikeasti sopii.
+- Feedback is not automatically treated as universal truth.
+- Feedback should be stored with context, timestamp, and source.
+- Sensitive feedback should not be committed to Git.
+- Feedback should influence future behavior only through explicit retrieval or reviewed memory use.
 
+## Test expectation
+
+The project should test that feedback can be recorded, listed, and kept separate from private raw chat logs.

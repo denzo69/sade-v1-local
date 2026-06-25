@@ -1,5 +1,14 @@
-# Memory Cleaner Policy v1
+# Memory Cleaner Policy
 
-Muistihuolto toimii oletuksena vain esikatseluna. Se voi ehdottaa täsmällisiä kaksoiskappaleita ja vanhoja keskustelulokimerkintöjä, mutta suojaa pysyvän Säde-muistin, oppimiskatsaukset, käyttöohjeet ja oppimispalautteen.
+The memory cleaner keeps local memory useful without silently deleting important information.
 
-Poisto vaatii ehdokastunnisteet ja täsmällisen vahvistuslauseen `HYVÄKSYN MUISTIHUOLLON`. Poistot auditoidaan ennen ja jälkeen. Hiljaista tai automaattista poistoa ei tehdä.
+## Rules
+
+- Cleaning should be explicit and reviewable.
+- Destructive cleanup must be audit logged.
+- Private memory should not be included in the public repository.
+- Expired or low-value entries may be flagged before deletion.
+
+## Safer default
+
+Prefer review and export over automatic deletion.

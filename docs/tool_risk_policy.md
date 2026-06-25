@@ -1,25 +1,15 @@
-# Säde Tool Risk Policy v1
+# Tool Risk Policy
 
-Säde v1 luokittelee työkalut riskitason mukaan, jotta luku-, haku-, kirjoitus- ja järjestelmätoiminnot eivät sekoitu toisiinsa.
+Every tool action should have a risk classification before it runs.
 
-Riskitasot:
+## Why it matters
 
-- `read`: turvalliset lukutoiminnot
-- `search`: haku- ja RAG-toiminnot
-- `memory_write`: muistiin kirjoittavat toiminnot
-- `file_write`: tiedostoa muuttavat toiminnot
-- `high`: korkean vaikutuksen ylläpitotoiminnot
-- `critical`: ydinpromptiin, palautukseen tai poistoon liittyvät erityisen riskialttiit toiminnot
+AI assistants often combine chat, memory, files, web access, and system actions. Treating all actions as equally safe is a security mistake.
 
-Audit-log tukee tasoja `low`, `medium` ja `high`. Siksi tarkempi työkaluriski tallennetaan metadataan ja muunnetaan audit-logiin yhteensopivaksi riskiksi.
+## Expected behavior
 
-Pääreitti:
-
-- `GET /tools/policies`
-
-Toteutus:
-
-- `app/tool_permissions.py`
-
-Periaate: jos toiminto kirjoittaa muistiin, muuttaa tiedostoa, poistaa tietoa tai palauttaa varmuuskopiosta, sen pitää olla auditoitava ja tarpeen mukaan vahvistettava.
-
+- Read-only actions are low risk.
+- Memory writes require explicit intent.
+- File writes require clear scope.
+- Network calls should show source boundaries.
+- Critical actions should be blocked or require strong confirmation.

@@ -468,27 +468,27 @@
     <script>
     const I18N = {
         fi: {
-            appSubtitle: "Paikallinen AI-työtila",
-            navChat: "Keskustelu",
-            navMemory: "Muisti",
-            navFiles: "Aineistot",
-            navSettings: "Asetukset",
-            chatTitle: "Keskustele avustajan kanssa",
-            chatLead: "Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.",
-            messageLabel: "Viesti",
-            send: "Lähetä",
-            clearChat: "Tyhjennä näkyvä chat",
-            saveConversation: "Tallenna tämä keskustelu muistiin",
-            memoryTitle: "Muisti",
-            memoryLead: "Katso mitä avustaja muistaa, lisää uusia muistoja ja vie muistisi talteen.",
-            filesTitle: "Aineistot",
-            filesLead: "Opeta avustajaa tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.",
-            settingsTitle: "Asetukset",
-            settingsLead: "Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.",
-            languageLabel: "Käyttöliittymän kieli",
-            saveSettings: "Tallenna asetukset",
-            configLoading: "Asetukset latautuvat...",
-            modelWord: "Malli"
+            appSubtitle: "Local AI workspace",
+            navChat: "Chat",
+            navMemory: "Memory",
+            navFiles: "Sources",
+            navSettings: "Settings",
+            chatTitle: "Chat with the assistant",
+            chatLead: "Chat is the main workspace. Tool commands can be used in the same input.",
+            messageLabel: "Message",
+            send: "Send",
+            clearChat: "Clear visible chat",
+            saveConversation: "Save this conversation to memory",
+            memoryTitle: "Memory",
+            memoryLead: "Review what the assistant remembers, add new memories, and export your memory.",
+            filesTitle: "Sources",
+            filesLead: "Teach the assistant with files: add a document, summarize it, and save the essentials to memory.",
+            settingsTitle: "Settings",
+            settingsLead: "Model, system status, backups, and less frequently needed maintenance tools.",
+            languageLabel: "Interface language",
+            saveSettings: "Save settings",
+            configLoading: "Loading settings...",
+            modelWord: "Model"
         },
         en: {
             appSubtitle: "Local-first AI assistant",
@@ -514,16 +514,16 @@
             modelWord: "Model"
         }
     };
-    let currentUiLanguage = "fi";
+    let currentUiLanguage = "en";
     function t(key) {
-        return (I18N[currentUiLanguage] && I18N[currentUiLanguage][key]) || I18N.fi[key] || key;
+        return (I18N[currentUiLanguage] && I18N[currentUiLanguage][key]) || I18N.en[key] || key;
     }
     function setText(selector, text) {
         const element = document.querySelector(selector);
         if (element) element.innerText = text;
     }
     function applyUiLanguage(language) {
-        currentUiLanguage = ["fi", "en"].includes(language) ? language : "fi";
+        currentUiLanguage = ["fi", "en"].includes(language) ? language : "en";
         document.documentElement.lang = currentUiLanguage;
         setText(".brand p", t("appSubtitle"));
         setText('[data-tab="chat"]', t("navChat"));
@@ -872,7 +872,7 @@ async function loadConfigInfo() {
         const data = await response.json();
 
         if (!data.ok) {
-            infoBox.innerText = "Asetuksia ei saatu ladattua: " + JSON.stringify(data);
+            infoBox.innerText = "Settings could not be loaded: " + JSON.stringify(data);
             return;
         }
 
@@ -881,8 +881,8 @@ async function loadConfigInfo() {
         document.getElementById("configNumCtx").value = data.num_ctx ?? "";
         document.getElementById("configMemoryChars").value = data.memory_context_chars ?? "";
         document.getElementById("configChatChars").value = data.chat_context_chars ?? "";
-        document.getElementById("configLanguage").value = data.ui_language || "fi";
-        applyUiLanguage(data.ui_language || "fi");
+        document.getElementById("configLanguage").value = data.ui_language || "en";
+        applyUiLanguage(data.ui_language || "en");
 
         infoBox.innerText =
             t("modelWord") + ": " + data.ollama_model +
@@ -892,7 +892,7 @@ async function loadConfigInfo() {
             " / chat: " + data.chat_context_chars;
 
     } catch (error) {
-        infoBox.innerText = "Asetusten lataus epäonnistui: " + error;
+        infoBox.innerText = "Loading settings failed: " + error;
         console.error("loadConfigInfo error:", error);
     }
 }
@@ -906,12 +906,12 @@ async function loadSystemPrompt() {
 
         if (response.ok && data.ok) {
             promptBox.value = data.content;
-            document.getElementById("status").innerText = "Ydinprompti ladattu.";
+            document.getElementById("status").innerText = "System prompt loaded.";
         } else {
-            document.getElementById("status").innerText = "Ydinpromptin lataus epäonnistui: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Loading system prompt failed: " + JSON.stringify(data);
         }
     } catch (error) {
-        document.getElementById("status").innerText = "Yhteysvirhe ydinpromptia ladattaessa: " + error;
+        document.getElementById("status").innerText = "Connection error while loading system prompt: " + error;
     }
 }
 
@@ -921,7 +921,7 @@ async function saveSystemPrompt() {
     const content = promptBox.value.trim();
 
     if (!content) {
-        document.getElementById("status").innerText = "Ydinprompti ei saa olla tyhjä.";
+        document.getElementById("status").innerText = "System prompt cannot be empty.";
         return;
     }
 
@@ -939,12 +939,12 @@ async function saveSystemPrompt() {
         const data = await response.json();
 
         if (response.ok && data.ok) {
-            document.getElementById("status").innerText = "Ydinprompti tallennettu.";
+            document.getElementById("status").innerText = "System prompt saved.";
         } else {
-            document.getElementById("status").innerText = "Ydinpromptin tallennus epäonnistui: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Saving system prompt failed: " + JSON.stringify(data);
         }
     } catch (error) {
-        document.getElementById("status").innerText = "Yhteysvirhe ydinpromptia tallentaessa: " + error;
+        document.getElementById("status").innerText = "Connection error while saving system prompt: " + error;
     }
 }
 
@@ -955,10 +955,10 @@ async function saveConfigSettings() {
     const numCtx = parseInt(document.getElementById("configNumCtx").value);
     const memoryChars = parseInt(document.getElementById("configMemoryChars").value);
     const chatChars = parseInt(document.getElementById("configChatChars").value);
-    const uiLanguage = document.getElementById("configLanguage").value || "fi";
+    const uiLanguage = document.getElementById("configLanguage").value || "en";
 
     if (!model) {
-        document.getElementById("status").innerText = "Mallin nimi ei saa olla tyhjä.";
+        document.getElementById("status").innerText = "Model name cannot be empty.";
         return;
     }
 
@@ -981,15 +981,15 @@ async function saveConfigSettings() {
         const data = await response.json();
 
         if (response.ok && data.ok) {
-            document.getElementById("status").innerText = "Asetukset tallennettu.";
+            document.getElementById("status").innerText = "Settings saved.";
             applyUiLanguage(uiLanguage);
             loadConfigInfo();
             checkOllamaStatus();
         } else {
-            document.getElementById("status").innerText = "Asetusten tallennus epäonnistui: " + JSON.stringify(data);
+            document.getElementById("status").innerText = "Saving settings failed: " + JSON.stringify(data);
         }
     } catch (error) {
-        document.getElementById("status").innerText = "Yhteysvirhe asetuksia tallentaessa: " + error;
+        document.getElementById("status").innerText = "Connection error while saving settings: " + error;
     }
 }
 
@@ -1048,44 +1048,44 @@ async function loadSystemStatus() {
         output += "Model: " + data.model + "\n";
         output += "Context / num_ctx: " + data.num_ctx + "\n\n";
 
-        output += "Project path: " + (data.project.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "Project path: " + (data.project.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.project.path + "\n\n";
 
-        output += "Memory path: " + (data.memory.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "Memory path: " + (data.memory.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.memory.path + "\n\n";
 
         output += "Assistant memory: " + (data.sade_memory.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.sade_memory.path + "\n";
-        output += "Koko: " + data.sade_memory.size_bytes + " bytes\n\n";
+        output += "Size: " + data.sade_memory.size_bytes + " bytes\n\n";
 
-        output += "Keskusteluloki: " + (data.chat_log.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "Chat log: " + (data.chat_log.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.chat_log.path + "\n";
-        output += "Koko: " + data.chat_log.size_bytes + " bytes\n\n";
+        output += "Size: " + data.chat_log.size_bytes + " bytes\n\n";
 
-        output += "Ydinprompti: " + (data.system_prompt.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "System prompt: " + (data.system_prompt.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.system_prompt.path + "\n";
-        output += "Koko: " + data.system_prompt.size_bytes + " bytes\n\n";
+        output += "Size: " + data.system_prompt.size_bytes + " bytes\n\n";
 
-        output += "Config: " + (data.config.exists ? "OK ✅" : "PUUTTUU ❌") + "\n";
+        output += "Config: " + (data.config.exists ? "OK ✅" : "MISSING ❌") + "\n";
         output += data.config.path + "\n\n";
 
-        output += "Backup path: " + (data.backup_path.exists ? "OK ✅" : "EI VIELÄ LUOTU / PUUTTUU ⚠️") + "\n";
+        output += "Backup path: " + (data.backup_path.exists ? "OK ✅" : "NOT CREATED / MISSING ⚠️") + "\n";
         output += data.backup_path.path + "\n\n";
 
-        output += "Export path: " + (data.export_path.exists ? "OK ✅" : "EI VIELÄ LUOTU / PUUTTUU ⚠️") + "\n";
+        output += "Export path: " + (data.export_path.exists ? "OK ✅" : "NOT CREATED / MISSING ⚠️") + "\n";
         output += data.export_path.path + "\n";
 
         box.innerText = output;
 
     } catch (error) {
         box.innerText =
-            "Yhteysvirhe järjestelmän tilaa ladattaessa:\n" +
+            "Connection error while loading system status:\n" +
             error;
     }
 }
 async function createExport() {
     const exportBox = document.getElementById("exportStatus");
-    exportBox.innerText = "Export: luodaan vientitiedostoa...";
+    exportBox.innerText = "Export: creating export file...";
 
     try {
         const response = await fetch("/export", {
@@ -1096,18 +1096,18 @@ async function createExport() {
 
         if (response.ok && data.ok) {
             exportBox.innerText = "Export luotu ✅ " + data.path;
-            document.getElementById("status").innerText = "Vientitiedosto luotu: " + data.filename;
+            document.getElementById("status").innerText = "Export file created: " + data.filename;
         } else {
-            exportBox.innerText = "Export epäonnistui ❌ " + JSON.stringify(data);
+            exportBox.innerText = "Export failed ❌ " + JSON.stringify(data);
         }
     } catch (error) {
-        exportBox.innerText = "Export-yhteysvirhe ❌ " + error;
+        exportBox.innerText = "Export connection error ❌ " + error;
     }
 }
 
 async function createBackup() {
     const backupBox = document.getElementById("backupStatus");
-    backupBox.innerText = "Backup: luodaan varmuuskopiota...";
+    backupBox.innerText = "Backup: creating backup...";
 
     try {
         const response = await fetch("/backup", {
@@ -1117,31 +1117,31 @@ async function createBackup() {
         const data = await response.json();
 
         if (response.ok && data.ok) {
-            backupBox.innerText = "Backup luotu ✅ " + data.backup_path;
-            document.getElementById("status").innerText = "Varmuuskopio luotu.";
+            backupBox.innerText = "Backup created ✅ " + data.backup_path;
+            document.getElementById("status").innerText = "Backup created.";
         } else {
-            backupBox.innerText = "Backup epäonnistui ❌ " + JSON.stringify(data);
+            backupBox.innerText = "Backup failed ❌ " + JSON.stringify(data);
         }
     } catch (error) {
-        backupBox.innerText = "Backup-yhteysvirhe ❌ " + error;
+        backupBox.innerText = "Backup connection error ❌ " + error;
     }
 }    
 
 async function createBackupArchive() {
     const backupBox = document.getElementById("backupStatus");
-    backupBox.innerText = "Zip-backup: luodaan...";
+    backupBox.innerText = "Zip backup: creating...";
     try {
         const response = await fetch("/backup/archive", { method: "POST" });
         const data = await response.json();
         if (response.ok && data.ok) {
-            backupBox.innerText = "Zip-backup luotu ✅ " + data.path;
-            document.getElementById("status").innerText = "Zip-varmuuskopio luotu.";
+            backupBox.innerText = "Zip backup created ✅ " + data.path;
+            document.getElementById("status").innerText = "Zip backup created.";
             listBackups();
         } else {
-            backupBox.innerText = "Zip-backup epäonnistui ❌ " + JSON.stringify(data);
+            backupBox.innerText = "Zip backup failed ❌ " + JSON.stringify(data);
         }
     } catch (error) {
-        backupBox.innerText = "Zip-backup-yhteysvirhe ❌ " + error;
+        backupBox.innerText = "Zip backup connection error ❌ " + error;
     }
 }
 
@@ -1159,12 +1159,12 @@ async function listBackups() {
         (data.backups || []).forEach((item, index) => {
             output += (index + 1) + ". " + item.name + "\n";
             output += item.path + "\n";
-            output += "Koko: " + item.size_bytes + " bytes\n";
+            output += "Size: " + item.size_bytes + " bytes\n";
             output += "Muokattu: " + item.modified + "\n\n";
         });
-        backupList.innerText = output || "Ei varmuuskopioita.";
+        backupList.innerText = output || "No backups.";
     } catch (error) {
-        backupList.innerText = "Yhteysvirhe: " + error;
+        backupList.innerText = "Connection error: " + error;
     }
 }
 
@@ -1177,44 +1177,44 @@ async function runStaticEvals() {
         box.innerText = JSON.stringify(data, null, 2);
         document.getElementById("status").innerText = data.ok ? "Staattiset evalit läpi." : "Staattisissa evaleissa huomautettavaa.";
     } catch (error) {
-        box.innerText = "Yhteysvirhe: " + error;
+        box.innerText = "Connection error: " + error;
     }
 }
 
 async function runLiveEvals() {
     const box = document.getElementById("aiQualityResult");
-    box.innerText = "Ajetaan live-evaleja. Tämä voi kestää, jos malli on hidas...";
+    box.innerText = "Running live evals. This may take a while if the model is slow...";
     try {
         const response = await fetch("/evals/live?max_cases=3", { method: "POST" });
         const data = await response.json();
         box.innerText = JSON.stringify(data, null, 2);
-        document.getElementById("status").innerText = data.ok ? "Live-evalit läpi." : "Live-evaleissa huomautettavaa.";
+        document.getElementById("status").innerText = data.ok ? "Live evals passed." : "Live evals need attention.";
     } catch (error) {
-        box.innerText = "Yhteysvirhe: " + error;
+        box.innerText = "Connection error: " + error;
     }
 }
 
 async function loadDebugTrace() {
     const box = document.getElementById("aiQualityResult");
-    box.innerText = "Ladataan trace-lokia...";
+    box.innerText = "Loading trace log...";
     try {
         const response = await fetch("/debug/trace?limit=30");
         const data = await response.json();
         box.innerText = JSON.stringify(data, null, 2);
     } catch (error) {
-        box.innerText = "Yhteysvirhe: " + error;
+        box.innerText = "Connection error: " + error;
     }
 }
 
 async function loadToolPolicies() {
     const box = document.getElementById("aiQualityResult");
-    box.innerText = "Ladataan työkalujen riskipolitiikkaa...";
+    box.innerText = "Loading tool risk policy...";
     try {
         const response = await fetch("/tools/policies");
         const data = await response.json();
         box.innerText = JSON.stringify(data, null, 2);
     } catch (error) {
-        box.innerText = "Yhteysvirhe: " + error;
+        box.innerText = "Connection error: " + error;
     }
 }
 
@@ -1246,10 +1246,10 @@ function initializeWorkspace() {
     if (developmentMount) developmentMount.remove();
 
     const titles = {
-        chat: "Keskustelu",
-        memory: "Muisti",
-        files: "Aineistot",
-        settings: "Asetukset"
+        chat: "Chat",
+        memory: "Memory",
+        files: "Sources",
+        settings: "Settings"
     };
 
     document.querySelectorAll(".nav-tab").forEach(button => {
@@ -1290,21 +1290,21 @@ function initializeWorkspace() {
 
 async function loadAuditStatus() {
     const resultBox = document.getElementById("auditLogResult");
-    resultBox.textContent = "Tarkistetaan audit-ketjua...";
+    resultBox.textContent = "Checking audit chain...";
     try {
         const response = await fetch("/audit/status");
         const data = await response.json();
         resultBox.textContent = data.valid
-            ? `Audit-ketju on ehjä.\nTapahtumia: ${data.count}\nViimeisin: ${data.last_event_at || "-"}`
-            : `Audit-ketju ei ole ehjä.\n${data.error || "Tuntematon virhe"}`;
+            ? `Audit chain is valid.\nEvents: ${data.count}\nLatest: ${data.last_event_at || "-"}`
+            : `Audit chain is not valid.\n${data.error || "Unknown error"}`;
     } catch (error) {
-        resultBox.textContent = "Audit-tilan lukeminen epäonnistui: " + error;
+        resultBox.textContent = "Reading audit status failed: " + error;
     }
 }
 
 async function loadAuditLog() {
     const resultBox = document.getElementById("auditLogResult");
-    resultBox.textContent = "Ladataan audit-tapahtumia...";
+    resultBox.textContent = "Loading audit events...";
     try {
         const response = await fetch("/audit/log", {
             method: "POST",
@@ -1313,35 +1313,35 @@ async function loadAuditLog() {
         });
         const data = await response.json();
         if (!data.valid) {
-            resultBox.textContent = "Audit-ketju ei ole ehjä: " + (data.error || "tuntematon virhe");
+            resultBox.textContent = "Audit chain is not valid: " + (data.error || "unknown error");
             return;
         }
         const items = data.items || [];
         resultBox.textContent = items.length
-            ? items.map(item => `#${item.sequence} ${item.time}\n${item.category} / ${item.action} / ${item.outcome}\nRiski: ${item.risk_level}\nKohde: ${item.target || "-"}\nSyy: ${item.reason || "-"}`).join("\n\n---\n\n")
-            : "Audit-loki on vielä tyhjä.";
+            ? items.map(item => `#${item.sequence} ${item.time}\n${item.category} / ${item.action} / ${item.outcome}\nRisk: ${item.risk_level}\nTarget: ${item.target || "-"}\nReason: ${item.reason || "-"}`).join("\n\n---\n\n")
+            : "Audit log is still empty.";
     } catch (error) {
-        resultBox.textContent = "Audit-lokin lukeminen epäonnistui: " + error;
+        resultBox.textContent = "Reading audit log failed: " + error;
     }
 }
 
 async function loadLanguageStatus() {
     const resultBox = document.getElementById("languagePackResult");
-    resultBox.textContent = "Ladataan kielipaketin tilaa...";
+    resultBox.textContent = "Loading language-pack status...";
     try {
         const response = await fetch("/language/status");
         const data = await response.json();
         resultBox.textContent = [
-            `Tila: ${data.enabled ? "käytössä" : "pois käytöstä"}`,
-            `Versio: ${data.version}`,
-            `Oletuskieli: ${data.default_language}`,
-            `Projektitermejä: ${data.terminology_count}`,
-            `Politiikka: ${data.policy_exists ? "löytyy" : "puuttuu"}`,
+            `Status: ${data.enabled ? "enabled" : "disabled"}`,
+            `Version: ${data.version}`,
+            `Default language: ${data.default_language}`,
+            `Project terms: ${data.terminology_count}`,
+            `Policy: ${data.policy_exists ? "found" : "missing"}`,
             "",
             ...(data.limitations || []).map(item => "- " + item)
         ].join("\n");
     } catch (error) {
-        resultBox.textContent = "Kielipaketin tilan lukeminen epäonnistui: " + error;
+        resultBox.textContent = "Reading language-pack status failed: " + error;
     }
 }
 
@@ -1353,12 +1353,12 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-<!-- Säde upload UI v1 -->
+<!-- Upload UI v1 -->
 <section id="sade-upload-section" style="margin-top: 32px;">
-    <h2>Opeta Sädeä tiedostolla</h2>
+    <h2>Teach with a file</h2>
 
     <p style="margin-bottom: 10px;">
-        Valitse tekstitiedosto, jonka haluat antaa Säteen käyttöön. Lähetyksen jälkeen voit pyytää Sädeä tiivistämään sen tai opettamaan olennaiset asiat muistiin.
+        Choose a text file to add as source material. After upload, you can ask the assistant to summarize it or save the essentials to memory.
     </p>
 
     <input
@@ -1368,7 +1368,7 @@ window.addEventListener("DOMContentLoaded", function () {
         style="display:block; margin-bottom: 12px;"
     />
 
-    <button type="button" onclick="uploadFileToSade()">Lisää aineisto Säteelle</button>
+    <button type="button" onclick="uploadFileToSade()">Add source material</button>
 
     <pre id="sade-upload-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -1379,7 +1379,7 @@ async function uploadFileToSade() {
     const resultBox = document.getElementById("sade-upload-result");
 
     if (!input || !input.files || input.files.length === 0) {
-        resultBox.textContent = "Valitse ensin tiedosto.";
+        resultBox.textContent = "Choose a file first.";
         return;
     }
 
@@ -1387,7 +1387,7 @@ async function uploadFileToSade() {
     const formData = new FormData();
     formData.append("file", file);
 
-    resultBox.textContent = "Lisätään aineistoa Säteelle...";
+    resultBox.textContent = "Adding source material...";
 
     try {
         const response = await fetch("/files/upload", {
@@ -1398,52 +1398,52 @@ async function uploadFileToSade() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Aineiston lisääminen epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Adding source material failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Aineisto lisätty onnistuneesti.\n\n" +
-            "Polku: " + data.relative_path + "\n" +
-            "Koko: " + data.size_bytes + " tavua\n\n" +
-            "Seuraavat hyödylliset komennot:\n" +
-            "- tiivistä tiedosto " + data.relative_path + "\n" +
-            "- lisää tiedosto " + data.relative_path + " muistiin\n\n" +
-            "Käyttäjän kielellä: pyydä Sädeä tiivistämään tiedosto tai opettamaan sen tärkeimmät asiat.";
+            "Source material added successfully.\n\n" +
+            "Path: " + data.relative_path + "\n" +
+            "Size: " + data.size_bytes + " bytes\n\n" +
+            "Useful next commands:\n" +
+            "- summarize file " + data.relative_path + "\n" +
+            "- add file " + data.relative_path + " to memory\n\n" +
+            "Tip: ask the assistant to summarize the file or learn its most important points.";
 
     } catch (error) {
-        resultBox.textContent = "Aineiston lisääminen epäonnistui: " + error;
+        resultBox.textContent = "Adding source material failed: " + error;
     }
 }
 </script>
-<!-- /Säde upload UI v1 -->
+<!-- /Upload UI v1 -->
 
-<!-- Säde task queue UI v1 -->
+<!-- Task queue UI v1 -->
 <section id="sade-task-section" style="margin-top: 32px;">
-    <h2>Tehtäväjono</h2>
+    <h2>Task queue</h2>
 
     <p style="margin-bottom: 10px;">
-        Lisää tehtäviä jonoon ja suorita niitä yksi kerrallaan.
+        Add tasks to the queue and run them one at a time.
     </p>
 
-    <label for="sade-task-title">Otsikko</label>
+    <label for="sade-task-title">Title</label>
     <input
         id="sade-task-title"
         type="text"
-        placeholder="Esim. Tiivistä testitiedosto"
+        placeholder="Example: summarize the test file"
         style="display:block; width:100%; margin-bottom: 10px;"
     />
 
-    <label for="sade-task-prompt">Tehtävä</label>
+    <label for="sade-task-prompt">Task</label>
     <textarea
         id="sade-task-prompt"
-        placeholder="Esim. tiivistä tiedosto uploads/testi.md"
+        placeholder="Example: summarize file uploads/test.md"
         style="display:block; width:100%; min-height: 90px; margin-bottom: 12px;"
     ></textarea>
 
-    <button type="button" onclick="addSadeTask()">Lisää tehtävä</button>
-    <button type="button" onclick="listSadeTasks()">Näytä tehtävät</button>
-    <button type="button" onclick="runNextSadeTask()">Suorita seuraava</button>
+    <button type="button" onclick="addSadeTask()">Add task</button>
+    <button type="button" onclick="listSadeTasks()">Show tasks</button>
+    <button type="button" onclick="runNextSadeTask()">Run next</button>
 
     <pre id="sade-task-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -1455,11 +1455,11 @@ async function addSadeTask() {
     const resultBox = document.getElementById("sade-task-result");
 
     if (!prompt) {
-        resultBox.textContent = "Kirjoita ensin tehtävä.";
+        resultBox.textContent = "Write a task first.";
         return;
     }
 
-    resultBox.textContent = "Lisätään tehtävää jonoon...";
+    resultBox.textContent = "Adding task to queue...";
 
     try {
         const response = await fetch("/tasks/add", {
@@ -1476,24 +1476,24 @@ async function addSadeTask() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Tehtävän lisäys epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Adding task failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Tehtävä lisätty jonoon.\n\n" +
+            "Task added to queue.\n\n" +
             "ID: " + data.task.id + "\n" +
-            "Otsikko: " + data.task.title + "\n" +
-            "Tila: " + data.task.status;
+            "Title: " + data.task.title + "\n" +
+            "Status: " + data.task.status;
 
     } catch (error) {
-        resultBox.textContent = "Tehtävän lisäys epäonnistui: " + error;
+        resultBox.textContent = "Adding task failed: " + error;
     }
 }
 
 async function listSadeTasks() {
     const resultBox = document.getElementById("sade-task-result");
-    resultBox.textContent = "Haetaan tehtäviä...";
+    resultBox.textContent = "Loading tasks...";
 
     try {
         const response = await fetch("/tasks/list", {
@@ -1508,12 +1508,12 @@ async function listSadeTasks() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Tehtävien haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Loading tasks failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.tasks || data.tasks.length === 0) {
-            resultBox.textContent = "Tehtäväjono on tyhjä.";
+            resultBox.textContent = "Task queue is empty.";
             return;
         }
 
@@ -1523,7 +1523,7 @@ async function listSadeTasks() {
         ).join("\n\n");
 
     } catch (error) {
-        resultBox.textContent = "Tehtävien haku epäonnistui: " + error;
+        resultBox.textContent = "Loading tasks failed: " + error;
     }
 }
 
@@ -1539,39 +1539,39 @@ async function runNextSadeTask() {
         const data = await response.json();
 
         if (!response.ok || data.ok === false) {
-            resultBox.textContent = "Tehtävän suoritus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Running task failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent = JSON.stringify(data, null, 2);
 
     } catch (error) {
-        resultBox.textContent = "Tehtävän suoritus epäonnistui: " + error;
+        resultBox.textContent = "Running task failed: " + error;
     }
 }
 </script>
-<!-- /Säde task queue UI v1 -->
+<!-- /Task queue UI v1 -->
 
-<!-- Säde Dev Mode UI v1 -->
+<!-- Dev Mode UI v1 -->
 <section id="sade-dev-section" style="margin-top: 32px;">
     <h2>Dev Mode</h2>
 
     <p style="margin-bottom: 10px;">
-        Skannaa projektin rakenne ja hae funktioita, reittejä tai tiedostoja codebase mapista.
+        Scan the project structure and search functions, routes, or files from the codebase map.
     </p>
 
-    <button type="button" onclick="buildSadeCodebaseMap()">Skannaa projekti</button>
-    <button type="button" onclick="readSadeCodebaseMap()">Näytä mapin tila</button>
+    <button type="button" onclick="buildSadeCodebaseMap()">Scan project</button>
+    <button type="button" onclick="readSadeCodebaseMap()">Show map status</button>
 
     <div style="margin-top: 14px;">
-        <label for="sade-dev-query">Haku codebase mapista</label>
+        <label for="sade-dev-query">Search codebase map</label>
         <input
             id="sade-dev-query"
             type="text"
             placeholder="Esim. upload, chat, memory, route, task"
             style="display:block; width:100%; margin-bottom: 10px;"
         />
-        <button type="button" onclick="findInSadeCodebaseMap()">Hae mapista</button>
+        <button type="button" onclick="findInSadeCodebaseMap()">Search map</button>
     </div>
 
     <pre id="sade-dev-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
@@ -1580,7 +1580,7 @@ async function runNextSadeTask() {
 <script>
 async function buildSadeCodebaseMap() {
     const resultBox = document.getElementById("sade-dev-result");
-    resultBox.textContent = "Skannataan projektia...";
+    resultBox.textContent = "Scanning project...";
 
     try {
         const response = await fetch("/dev/map", {
@@ -1592,46 +1592,46 @@ async function buildSadeCodebaseMap() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Skannaus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Scan failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Codebase map luotu.\n\n" +
-            "Tiedostoja: " + data.file_count + "\n" +
-            "Reittejä: " + data.route_count + "\n" +
-            "Funktioita: " + data.function_count + "\n" +
-            "Luokkia: " + data.class_count + "\n\n" +
+            "Codebase map created.\n\n" +
+            "Files: " + data.file_count + "\n" +
+            "Routes: " + data.route_count + "\n" +
+            "Functions: " + data.function_count + "\n" +
+            "Classes: " + data.class_count + "\n\n" +
             "Map: " + data.map_path;
 
     } catch (error) {
-        resultBox.textContent = "Skannaus epäonnistui: " + error;
+        resultBox.textContent = "Scan failed: " + error;
     }
 }
 
 async function readSadeCodebaseMap() {
     const resultBox = document.getElementById("sade-dev-result");
-    resultBox.textContent = "Haetaan codebase mapia...";
+    resultBox.textContent = "Loading codebase map...";
 
     try {
         const response = await fetch("/dev/map");
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Mapia ei voitu lukea:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Could not read map:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Codebase map löytyy.\n\n" +
-            "Luotu: " + data.created_at + "\n" +
-            "Tiedostoja: " + data.file_count + "\n" +
-            "Reittejä: " + data.route_count + "\n" +
-            "Funktioita: " + data.function_count + "\n" +
-            "Luokkia: " + data.class_count;
+            "Codebase map found.\n\n" +
+            "Created: " + data.created_at + "\n" +
+            "Files: " + data.file_count + "\n" +
+            "Routes: " + data.route_count + "\n" +
+            "Functions: " + data.function_count + "\n" +
+            "Classes: " + data.class_count;
 
     } catch (error) {
-        resultBox.textContent = "Mapin luku epäonnistui: " + error;
+        resultBox.textContent = "Reading map failed: " + error;
     }
 }
 
@@ -1640,11 +1640,11 @@ async function findInSadeCodebaseMap() {
     const resultBox = document.getElementById("sade-dev-result");
 
     if (!query) {
-        resultBox.textContent = "Kirjoita ensin hakusana.";
+        resultBox.textContent = "Write a search term first.";
         return;
     }
 
-    resultBox.textContent = "Haetaan mapista...";
+    resultBox.textContent = "Searching map...";
 
     try {
         const response = await fetch("/dev/find", {
@@ -1656,12 +1656,12 @@ async function findInSadeCodebaseMap() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Search failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.results || data.results.length === 0) {
-            resultBox.textContent = "Ei osumia haulle: " + query;
+            resultBox.textContent = "No matches for: " + query;
             return;
         }
 
@@ -1680,21 +1680,21 @@ async function findInSadeCodebaseMap() {
         }).join("\n\n");
 
     } catch (error) {
-        resultBox.textContent = "Haku epäonnistui: " + error;
+        resultBox.textContent = "Search failed: " + error;
     }
 }
 </script>
-<!-- /Säde Dev Mode UI v1 -->
+<!-- /Dev Mode UI v1 -->
 
-<!-- Säde Autonomous Learning Loop UI v1 -->
+<!-- Autonomous Learning Loop UI v1 -->
 <section id="sade-learning-section" style="margin-top: 32px;">
     <h2>Autonomous Learning Loop</h2>
 
     <p style="margin-bottom: 10px;">
-        Skannaa uploads-kansio, tunnista uudet tekstitiedostot ja lisää ne Säde-muistiin sekä semanttiseen muistiin.
+        Scan the uploads folder, detect new text files, and add them to memory and semantic memory.
     </p>
 
-    <label for="sade-learning-limit">Maksimi tiedostomäärä per oppimiskierros</label>
+    <label for="sade-learning-limit">Maximum files per learning run</label>
     <input
         id="sade-learning-limit"
         type="number"
@@ -1704,9 +1704,9 @@ async function findInSadeCodebaseMap() {
         style="display:block; width:120px; margin-bottom: 12px;"
     />
 
-    <button type="button" onclick="scanSadeLearningFiles()">Skannaa uudet tiedostot</button>
-    <button type="button" onclick="runSadeLearningLoop()">Opi uudet tiedostot</button>
-    <button type="button" onclick="showSadeLearningStatus()">Näytä oppimistila</button>
+    <button type="button" onclick="scanSadeLearningFiles()">Scan new files</button>
+    <button type="button" onclick="runSadeLearningLoop()">Learn new files</button>
+    <button type="button" onclick="showSadeLearningStatus()">Show learning status</button>
 
     <pre id="sade-learning-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -1714,32 +1714,32 @@ async function findInSadeCodebaseMap() {
 <script>
 async function showSadeLearningStatus() {
     const resultBox = document.getElementById("sade-learning-result");
-    resultBox.textContent = "Haetaan oppimistilaa...";
+    resultBox.textContent = "Loading learning status...";
 
     try {
         const response = await fetch("/learning/status");
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Oppimistilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Loading learning status failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Autonomous Learning Loop on käytössä.\n\n" +
-            "Odottavia tiedostoja: " + data.pending_files + "\n" +
-            "Oppimistapahtumia: " + data.learning_events + "\n\n" +
+            "Autonomous Learning Loop is enabled.\n\n" +
+            "Pending files: " + data.pending_files + "\n" +
+            "Learning events: " + data.learning_events + "\n\n" +
             "Uploads: " + data.uploads_path + "\n" +
             "Learning log: " + data.learning_log;
 
     } catch (error) {
-        resultBox.textContent = "Oppimistilan haku epäonnistui: " + error;
+        resultBox.textContent = "Loading learning status failed: " + error;
     }
 }
 
 async function scanSadeLearningFiles() {
     const resultBox = document.getElementById("sade-learning-result");
-    resultBox.textContent = "Skannataan uusia tiedostoja...";
+    resultBox.textContent = "Scanning new files...";
 
     try {
         const response = await fetch("/learning/scan", {
@@ -1754,25 +1754,25 @@ async function scanSadeLearningFiles() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Skannaus epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Scan failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.candidates || data.candidates.length === 0) {
             resultBox.textContent =
-                "Uusia opittavia tiedostoja ei löytynyt.\n\n" +
-                "Ohitettuja: " + data.skipped_count;
+                "No new learnable files found.\n\n" +
+                "Skipped: " + data.skipped_count;
             return;
         }
 
         resultBox.textContent =
-            "Uusia opittavia tiedostoja löytyi: " + data.candidate_count + "\n\n" +
+            "New learnable files found: " + data.candidate_count + "\n\n" +
             data.candidates.map(item =>
-                "- " + item.relative_path + " (" + item.size_bytes + " tavua)"
+                "- " + item.relative_path + " (" + item.size_bytes + " bytes)"
             ).join("\n");
 
     } catch (error) {
-        resultBox.textContent = "Skannaus epäonnistui: " + error;
+        resultBox.textContent = "Scan failed: " + error;
     }
 }
 
@@ -1781,7 +1781,7 @@ async function runSadeLearningLoop() {
     const limitInput = document.getElementById("sade-learning-limit");
     const maxFiles = parseInt(limitInput.value || "10", 10);
 
-    resultBox.textContent = "Säde opiskelee uusia tiedostoja...";
+    resultBox.textContent = "Learning new files...";
 
     try {
         const response = await fetch("/learning/run", {
@@ -1797,53 +1797,53 @@ async function runSadeLearningLoop() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Oppimiskierros epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Learning run failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.learned || data.learned.length === 0) {
             resultBox.textContent =
-                "Oppimiskierros suoritettu, mutta uusia tiedostoja ei ollut.\n\n" +
-                "Ohitettuja: " + (data.scan ? data.scan.skipped_count : "?");
+                "Learning run completed, but there were no new files.\n\n" +
+                "Skipped: " + (data.scan ? data.scan.skipped_count : "?");
             return;
         }
 
         resultBox.textContent =
-            "Oppimiskierros valmis.\n\n" +
-            "Opittu: " + data.learned_count + "\n" +
-            "Epäonnistui: " + data.failed_count + "\n\n" +
+            "Learning run complete.\n\n" +
+            "Learned: " + data.learned_count + "\n" +
+            "Failed: " + data.failed_count + "\n\n" +
             data.learned.map(item =>
                 "✅ " + item.relative_path +
                 (item.semantic_chunks ? "\nSemantic chunks: " + item.semantic_chunks : "")
             ).join("\n\n");
 
     } catch (error) {
-        resultBox.textContent = "Oppimiskierros epäonnistui: " + error;
+        resultBox.textContent = "Learning run failed: " + error;
     }
 }
 </script>
-<!-- /Säde Autonomous Learning Loop UI v1 -->
+<!-- /Autonomous Learning Loop UI v1 -->
 
-<!-- Säde Learning Review UI v1 -->
+<!-- Learning Review UI v1 -->
 <section id="sade-learning-review-section" style="margin-top: 32px;">
     <h2>Learning Review</h2>
 
     <p style="margin-bottom: 10px;">
-        Tee opituista tiedostoista opiskelumuistiinpanot: mitä opin, tärkeät käsitteet, yhteys Säde v1 -projektiin ja jatkotehtävät.
+        Create study notes from learned files: what was learned, important concepts, project connection, and follow-up tasks.
     </p>
 
-    <label for="sade-learning-review-path">Tiedostopolku</label>
+    <label for="sade-learning-review-path">File path</label>
     <input
         id="sade-learning-review-path"
         type="text"
-        placeholder="Esim. uploads/ai_agent_terms_atlas.md"
+        placeholder="Example: uploads/ai_agent_terms_atlas.md"
         style="display:block; width:100%; margin-bottom: 10px;"
     />
 
-    <button type="button" onclick="createSadeLearningReviewForFile()">Tee katsaus tiedostosta</button>
-    <button type="button" onclick="createSadeLearningReviewsRecent()">Tee katsaukset viimeksi opituista</button>
-    <button type="button" onclick="showSadeLearningReviews()">Näytä katsaukset</button>
-    <button type="button" onclick="showSadeLearningReviewStatus()">Näytä katsaus-tila</button>
+    <button type="button" onclick="createSadeLearningReviewForFile()">Review file</button>
+    <button type="button" onclick="createSadeLearningReviewsRecent()">Review recently learned files</button>
+    <button type="button" onclick="showSadeLearningReviews()">Show reviews</button>
+    <button type="button" onclick="showSadeLearningReviewStatus()">Show review status</button>
 
     <pre id="sade-learning-review-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -1851,25 +1851,25 @@ async function runSadeLearningLoop() {
 <script>
 async function showSadeLearningReviewStatus() {
     const resultBox = document.getElementById("sade-learning-review-result");
-    resultBox.textContent = "Haetaan Learning Review -tilaa...";
+    resultBox.textContent = "Loading Learning Review status...";
 
     try {
         const response = await fetch("/learning/review/status");
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Tilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Loading status failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Learning Review v1 on käytössä.\n\n" +
-            "Katsauksia: " + data.reviews_count + "\n" +
+            "Learning Review v1 is enabled.\n\n" +
+            "Reviews: " + data.reviews_count + "\n" +
             "Markdown: " + data.reviews_md + "\n" +
             "Log: " + data.reviews_log;
 
     } catch (error) {
-        resultBox.textContent = "Tilan haku epäonnistui: " + error;
+        resultBox.textContent = "Loading status failed: " + error;
     }
 }
 
@@ -1879,11 +1879,11 @@ async function createSadeLearningReviewForFile() {
     const relativePath = pathInput.value.trim();
 
     if (!relativePath) {
-        resultBox.textContent = "Kirjoita ensin tiedostopolku, esimerkiksi uploads/ai_agent_terms_atlas.md";
+        resultBox.textContent = "Write a file path first, for example uploads/ai_agent_terms_atlas.md";
         return;
     }
 
-    resultBox.textContent = "Luodaan oppimiskatsausta...";
+    resultBox.textContent = "Creating learning review...";
 
     try {
         const response = await fetch("/learning/review/file", {
@@ -1898,30 +1898,30 @@ async function createSadeLearningReviewForFile() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Katsauksen luonti epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Creating review failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         const review = data.review || {};
 
         resultBox.textContent =
-            (data.already_exists ? "Tästä tiedostosta oli jo katsaus.\n\n" : "Oppimiskatsaus luotu.\n\n") +
+            (data.already_exists ? "This file already has a review.\n\n" : "Learning review created.\n\n") +
             "Review ID: " + review.review_id + "\n" +
-            "Otsikko: " + review.title + "\n" +
-            "Lähde: " + review.relative_path + "\n\n" +
-            "Tärkeät käsitteet:\n" +
+            "Title: " + review.title + "\n" +
+            "Source: " + review.relative_path + "\n\n" +
+            "Important concepts:\n" +
             (review.terms || []).map(term => "- " + term).join("\n") +
-            "\n\nJatkotehtävät:\n" +
+            "\n\nFollow-up tasks:\n" +
             (review.future_tasks || []).map(task => "- " + task).join("\n");
 
     } catch (error) {
-        resultBox.textContent = "Katsauksen luonti epäonnistui: " + error;
+        resultBox.textContent = "Creating review failed: " + error;
     }
 }
 
 async function createSadeLearningReviewsRecent() {
     const resultBox = document.getElementById("sade-learning-review-result");
-    resultBox.textContent = "Luodaan katsauksia viimeksi opituista tiedostoista...";
+    resultBox.textContent = "Creating reviews for recently learned files...";
 
     try {
         const response = await fetch("/learning/review/recent", {
@@ -1936,29 +1936,29 @@ async function createSadeLearningReviewsRecent() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Katsausajo epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Review run failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "Katsausajo valmis.\n\n" +
-            "Luotu: " + data.created_count + "\n" +
-            "Ohitettu: " + data.skipped_count + "\n" +
-            "Epäonnistui: " + data.failed_count + "\n\n" +
+            "Review run complete.\n\n" +
+            "Created: " + data.created_count + "\n" +
+            "Skipped: " + data.skipped_count + "\n" +
+            "Failed: " + data.failed_count + "\n\n" +
             (data.created || []).map(item =>
                 "✅ " + item.relative_path + "\n" +
                 "Review ID: " + item.review_id + "\n" +
-                "Käsitteet: " + (item.terms || []).join(", ")
+                "Concepts: " + (item.terms || []).join(", ")
             ).join("\n\n");
 
     } catch (error) {
-        resultBox.textContent = "Katsausajo epäonnistui: " + error;
+        resultBox.textContent = "Review run failed: " + error;
     }
 }
 
 async function showSadeLearningReviews() {
     const resultBox = document.getElementById("sade-learning-review-result");
-    resultBox.textContent = "Haetaan oppimiskatsauksia...";
+    resultBox.textContent = "Loading learning reviews...";
 
     try {
         const response = await fetch("/learning/review/log", {
@@ -1972,38 +1972,38 @@ async function showSadeLearningReviews() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "Katsausten haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Loading reviews failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.items || data.items.length === 0) {
-            resultBox.textContent = "Oppimiskatsauksia ei ole vielä.";
+            resultBox.textContent = "There are no learning reviews yet.";
             return;
         }
 
         resultBox.textContent = data.items.map(item =>
             "📘 " + item.title + "\n" +
-            "Lähde: " + item.relative_path + "\n" +
+            "Source: " + item.relative_path + "\n" +
             "Review ID: " + item.review_id + "\n" +
-            "Käsitteet: " + (item.terms || []).slice(0, 10).join(", ")
+            "Concepts: " + (item.terms || []).slice(0, 10).join(", ")
         ).join("\n\n");
 
     } catch (error) {
-        resultBox.textContent = "Katsausten haku epäonnistui: " + error;
+        resultBox.textContent = "Loading reviews failed: " + error;
     }
 }
 </script>
-<!-- /Säde Learning Review UI v1 -->
+<!-- /Learning Review UI v1 -->
 
-<!-- Säde RAG Engine UI v1 -->
+<!-- RAG Engine UI v1 -->
 <section id="sade-rag-engine-section" style="margin-top: 32px;">
-    <h2>Lähteistä haku</h2>
+    <h2>Source search</h2>
 
     <p style="margin-bottom: 10px;">
-        Tarkista, löytyykö vastaus Säteen muistista ja lähdeaineistoista vai pitääkö epävarmuus kertoa. Tekninen nimi: RAG Engine.
+        Check whether an answer can be found from memory and source material, or whether uncertainty should be reported. Technical name: RAG Engine.
     </p>
 
-    <label for="sade-rag-query">Mitä etsitään lähteistä?</label>
+    <label for="sade-rag-query">What should be searched from sources?</label>
     <input
         id="sade-rag-query"
         type="text"
@@ -2011,8 +2011,8 @@ async function showSadeLearningReviews() {
         style="display:block; width:100%; margin-bottom: 10px;"
     />
 
-    <button type="button" onclick="runSadeRagSearch()">Hae lähteistä</button>
-    <button type="button" onclick="showSadeRagStatus()">Näytä tekninen hakutila</button>
+    <button type="button" onclick="runSadeRagSearch()">Search sources</button>
+    <button type="button" onclick="showSadeRagStatus()">Show technical search status</button>
 
     <pre id="sade-rag-result" style="white-space: pre-wrap; margin-top: 14px;"></pre>
 </section>
@@ -2020,27 +2020,27 @@ async function showSadeLearningReviews() {
 <script>
 async function showSadeRagStatus() {
     const resultBox = document.getElementById("sade-rag-result");
-    resultBox.textContent = "Haetaan RAG Engine -tilaa...";
+    resultBox.textContent = "Loading RAG Engine status...";
 
     try {
         const response = await fetch("/rag/status");
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "RAG-tilan haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "Loading RAG status failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         resultBox.textContent =
-            "RAG Engine v1 on käytössä.\n\n" +
-            "Chat-logi oletuksena: " + data.chat_log_default + "\n" +
-            "Oletustulokset: " + data.default_n_results + "\n" +
-            "Semanttinen muisti OK: " + ((data.semantic_memory || {}).ok ? "kyllä" : "ei") + "\n\n" +
-            "Prioriteetit:\n" +
+            "RAG Engine v1 is enabled.\n\n" +
+            "Chat log by default: " + data.chat_log_default + "\n" +
+            "Default results: " + data.default_n_results + "\n" +
+            "Semantic memory OK: " + ((data.semantic_memory || {}).ok ? "yes" : "no") + "\n\n" +
+            "Priorities:\n" +
             JSON.stringify(data.source_priorities, null, 2);
 
     } catch (error) {
-        resultBox.textContent = "RAG-tilan haku epäonnistui: " + error;
+        resultBox.textContent = "Loading RAG status failed: " + error;
     }
 }
 
@@ -2050,11 +2050,11 @@ async function runSadeRagSearch() {
     const query = queryInput.value.trim();
 
     if (!query) {
-        resultBox.textContent = "Kirjoita ensin hakusana.";
+        resultBox.textContent = "Write a search term first.";
         return;
     }
 
-    resultBox.textContent = "Haetaan RAGilla...";
+    resultBox.textContent = "Searching with RAG...";
 
     try {
         const response = await fetch("/rag/search", {
@@ -2070,30 +2070,30 @@ async function runSadeRagSearch() {
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-            resultBox.textContent = "RAG-haku epäonnistui:\n" + JSON.stringify(data, null, 2);
+            resultBox.textContent = "RAG search failed:\n" + JSON.stringify(data, null, 2);
             return;
         }
 
         if (!data.results || data.results.length === 0) {
-            resultBox.textContent = "Ei riittävän laadukkaita osumia.";
+            resultBox.textContent = "No sufficiently high-quality matches.";
             return;
         }
 
         resultBox.textContent = data.results.map(item =>
             "#" + item.rank + " | " + item.source_type + " | score " + item.score + "\n" +
-            "Lähde: " + item.source + "\n" +
-            "Polku: " + (item.path || "") + "\n" +
-            "Otsikko: " + (item.title || "") + "\n" +
-            "Miksi: " + (item.reasons || []).join(", ") + "\n\n" +
+            "Source: " + item.source + "\n" +
+            "Path: " + (item.path || "") + "\n" +
+            "Title: " + (item.title || "") + "\n" +
+            "Why: " + (item.reasons || []).join(", ") + "\n\n" +
             (item.text || "").slice(0, 1200)
         ).join("\n\n---\n\n");
 
     } catch (error) {
-        resultBox.textContent = "RAG-haku epäonnistui: " + error;
+        resultBox.textContent = "RAG search failed: " + error;
     }
 }
 </script>
-<!-- /Säde RAG Engine UI v1 -->
+<!-- /RAG Engine UI v1 -->
 
 </body>
 </html>

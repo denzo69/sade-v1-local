@@ -1,26 +1,15 @@
-# Säde Authentication Policy v1
+# Authentication Policy
 
-Säde v1:n käyttöliittymä ja kaikki API-reitit ovat oletuksena kirjautumisen takana. Julkisia ovat vain kirjautumissivu sekä kirjautumisen tila- ja sisäänkirjautumisreitit.
+Local AI Workspace protects the browser UI and API routes with local authentication.
 
-## Käyttäjä ja salasana
+## Principles
 
-- Ensimmäinen käyttäjä luodaan vain Säde-tietokoneen paikallisella komentorivillä.
-- Salasana on vähintään 12 merkkiä.
-- Salasana tallennetaan scrypt-tiivisteenä satunnaisen suolan kanssa; selväkielistä salasanaa ei tallenneta.
-- Viisi epäonnistunutta yritystä käynnistää 15 minuutin yritysrajoituksen.
+- The first user is created locally from the command line.
+- Password hashes are stored locally and are not committed to Git.
+- Sessions are stored server-side.
+- Logout invalidates the active session.
+- CSRF protection is required for state-changing browser requests.
 
-## Istunto
+## Deployment note
 
-- Istuntotunnus on satunnainen ja palvelin tallentaa vain sen SHA-256-tiivisteen.
-- Istunto vanhenee 12 tunnissa.
-- Eväste on `HttpOnly`, `SameSite=Strict` ja HTTPS-yhteydessä myös `Secure`.
-- Uloskirjautuminen mitätöi palvelinpuolisen istunnon.
-- Kirjoittavat pyynnöt vaativat istuntoon sidotun CSRF-tunnisteen.
-
-## Verkkoraja
-
-Kirjautuminen ei korvaa salattua yhteyttä. Etäkäytössä käytetään Tailscalea ja HTTPS:ää. Säde-palvelinta ei avata reitittimen porttiohjauksella suoraan internetiin.
-
-## Auditointi
-
-Onnistuneet ja epäonnistuneet kirjautumiset sekä uloskirjautumiset auditoidaan. Salasanaa, istuntotunnusta tai CSRF-tunnistetta ei kirjoiteta audit-lokiin.
+Authentication does not replace transport security. Remote access should use a trusted tunnel or HTTPS. The app should not be exposed directly to the public internet.

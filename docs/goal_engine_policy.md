@@ -1,21 +1,13 @@
-# Goal Engine Policy v1
+# Goal Engine Policy
 
-Goal Engine v1 antaa Säde v1:lle read-only-kyvyn tarkistaa kehityksen ja oppimisen tilaa.
+The goal engine is a read-only planning helper. It recommends the next development step from project state, tests, and documented gaps.
 
-Se vastaa esimerkiksi kysymyksiin:
+## Boundaries
 
-```text
-Mikä on tämän päivän tila oppimisen suhteen?
-Mikä on seuraava kehitysaskel?
-Mitä rakennetaan seuraavaksi?
-```
+- It must not execute file changes directly.
+- It must not claim that planned features are already complete.
+- It should prefer verifiable next steps over speculative roadmap items.
 
-## Rajaus
+## Good output
 
-Goal Engine ei muuta tiedostoja, ei aja komentoja, ei tee verkkohakuja eikä hyväksy koodimuutoksia.
-
-Se lukee dokumentoitua tilaa ja muodostaa suosituksen.
-
-## Totuusraja
-
-Suositus ei ole toteutus eikä hyväksyntä. Jos Goal Engine ehdottaa `controlled_write`-muutosta, Code Rewrite Protocol v1 pätee.
+A useful recommendation includes the reason, affected module, risk level, and a testable completion condition.
