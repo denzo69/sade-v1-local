@@ -468,27 +468,27 @@
     <script>
     const I18N = {
         fi: {
-            appSubtitle: "Local AI workspace",
-            navChat: "Chat",
-            navMemory: "Memory",
-            navFiles: "Sources",
-            navSettings: "Settings",
-            chatTitle: "Chat with the assistant",
-            chatLead: "Chat is the main workspace. Tool commands can be used in the same input.",
-            messageLabel: "Message",
-            send: "Send",
-            clearChat: "Clear visible chat",
-            saveConversation: "Save this conversation to memory",
-            memoryTitle: "Memory",
-            memoryLead: "Review what the assistant remembers, add new memories, and export your memory.",
-            filesTitle: "Sources",
-            filesLead: "Teach the assistant with files: add a document, summarize it, and save the essentials to memory.",
-            settingsTitle: "Settings",
-            settingsLead: "Model, system status, backups, and less frequently needed maintenance tools.",
-            languageLabel: "Interface language",
-            saveSettings: "Save settings",
-            configLoading: "Loading settings...",
-            modelWord: "Model"
+            appSubtitle: "Paikallinen AI-työtila",
+            navChat: "Keskustelu",
+            navMemory: "Muisti",
+            navFiles: "Aineistot",
+            navSettings: "Asetukset",
+            chatTitle: "Keskustele avustajan kanssa",
+            chatLead: "Chat on työtilan ensisijainen näkymä. Työkalukomennot toimivat samassa kentässä.",
+            messageLabel: "Viesti",
+            send: "Lähetä",
+            clearChat: "Tyhjennä näkyvä chat",
+            saveConversation: "Tallenna tämä keskustelu muistiin",
+            memoryTitle: "Muisti",
+            memoryLead: "Katso mitä avustaja muistaa, lisää uusia muistoja ja vie muistisi talteen.",
+            filesTitle: "Aineistot",
+            filesLead: "Opeta avustajaa tiedostoilla: lisää dokumentti, tiivistä se ja tallenna olennainen muistiin.",
+            settingsTitle: "Asetukset",
+            settingsLead: "Malli, järjestelmän tila, varmuuskopiot ja harvemmin tarvittavat ylläpitotoiminnot.",
+            languageLabel: "Käyttöliittymän kieli",
+            saveSettings: "Tallenna asetukset",
+            configLoading: "Asetukset latautuvat...",
+            modelWord: "Malli"
         },
         en: {
             appSubtitle: "Local-first AI assistant",
@@ -1015,7 +1015,7 @@ async function loadSystemStatus() {
 
         if (!response.ok) {
             box.innerText =
-                "Järjestelmän tilan lataus epäonnistui.\n" +
+                "Loading system status failed.\n" +
                 "HTTP status: " + response.status + "\n\n" +
                 rawText;
             return;
@@ -1027,15 +1027,15 @@ async function loadSystemStatus() {
             data = JSON.parse(rawText);
         } catch (parseError) {
             box.innerText =
-                "Vastaus ei ollut kelvollista JSONia.\n\n" +
+                "Response was not valid JSON.\n\n" +
                 rawText + "\n\n" +
-                "Virhe: " + parseError;
+                "Error: " + parseError;
             return;
         }
 
         if (!data.ok) {
             box.innerText =
-                "Järjestelmän tila palautti virheen:\n" +
+                "System status returned an error:\n" +
                 JSON.stringify(data, null, 2);
             return;
         }

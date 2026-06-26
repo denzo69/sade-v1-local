@@ -85,3 +85,14 @@ def test_ui_has_mobile_viewport_and_compact_chat_layout() -> None:
     assert "runLiveEvals()" in html
     assert "System prompt" in html
     assert "Language pack technical status" in html
+
+
+def test_ui_defaults_to_english_but_keeps_finnish_translation_pack() -> None:
+    html = UI_TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert 'let currentUiLanguage = "en"' in html
+    assert 'applyUiLanguage(data.ui_language || "en")' in html
+    assert 'navChat: "Chat"' in html
+    assert 'navChat: "Keskustelu"' in html
+    assert 'send: "Send"' in html
+    assert 'send: "Lähetä"' in html
