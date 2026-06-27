@@ -106,6 +106,17 @@ def test_search_reply_recommends_review_before_memory() -> None:
     assert "ei tallenneta faktatietona semanttiseen muistiin" in reply
 
 
+def test_weather_search_reply_hides_local_cache_path_and_guides_review() -> None:
+    result = _fake_search(Path("."), "s?? lieksa")
+    result["cache_path"] = r"C:\Sade\Sade-v1\memory\web_search_cache\weather.json"
+
+    reply = format_web_search_reply(result)
+
+    assert "C:\\Sade" not in reply
+    assert "paikalliseen" in reply
+    assert "Paina **Tarkista" in reply
+
+
 def test_failed_search_never_claims_success() -> None:
     reply = format_web_search_reply({"ok": False, "query": "test", "provider": "test", "error": "offline"})
 

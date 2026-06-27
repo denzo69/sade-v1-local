@@ -215,6 +215,7 @@
         .user, .sade { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; max-width: 88%; }
         .user { color: #dbeafe; background: #172554; margin-left: auto; }
         .sade { color: #fef3c7; background: #29220e; }
+        .user a, .sade a { color: #93c5fd; text-decoration: underline; overflow-wrap: anywhere; }
         .chat-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
         .chat-actions button { padding: 8px 12px; font-size: 13px; }
 
@@ -553,11 +554,37 @@
         if (viewTitle && activeTab) viewTitle.innerText = activeTab.innerText;
     }
 
+    function appendLinkifiedText(container, text) {
+        const urlPattern = /(https?:\/\/[^\s)]+[^\s).,;:!?])/g;
+        let lastIndex = 0;
+        const value = String(text || "");
+
+        for (const match of value.matchAll(urlPattern)) {
+            if (match.index > lastIndex) {
+                container.appendChild(document.createTextNode(value.slice(lastIndex, match.index)));
+            }
+
+            const url = match[0];
+            const link = document.createElement("a");
+            link.href = url;
+            link.textContent = url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            container.appendChild(link);
+            lastIndex = match.index + url.length;
+        }
+
+        if (lastIndex < value.length) {
+            container.appendChild(document.createTextNode(value.slice(lastIndex)));
+        }
+    }
+
     function addChatLine(role, text) {
         const chatBox = document.getElementById("chatBox");
         const div = document.createElement("div");
         div.className = role === "Sinä" ? "user" : "sade";
-        div.innerText = role + ":\n" + text;
+        div.appendChild(document.createTextNode(role + ":\n"));
+        appendLinkifiedText(div, text);
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
     }

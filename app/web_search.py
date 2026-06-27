@@ -585,9 +585,20 @@ def format_web_search_reply(result: Dict[str, Any]) -> str:
         f"Hakukysely: `{result.get('query')}`",
         f"Provider: `{result.get('provider')}`",
         "",
+    ]
+
+    if _looks_like_weather_query(str(result.get("query") or "")):
+        lines.extend([
+            "Löysin ajantasaiset säälähteet. En vielä väitä tarkkaa säälukemaa pelkän hakutuloslistan perusteella.",
+            "",
+            "Luotettavimmat seuraavat lähteet ovat yleensä Ilmatieteen laitos ja Foreca. Paina **Tarkista lähteet**, niin yritän lukea lähdesivut ja muodostaa lyhyen sääyhteenvedon.",
+            "",
+        ])
+
+    lines.extend([
         "Löysin nämä lähteet:",
         "",
-    ]
+    ])
 
     for item in items:
         title = item.get("title") or "Nimetön lähde"
@@ -608,7 +619,7 @@ def format_web_search_reply(result: Dict[str, Any]) -> str:
         "Suositeltu seuraava vaihe: **Tarkista lähteet**. Hakutuloskatkelmia ei tallenneta faktatietona semanttiseen muistiin.",
     ])
     if result.get("cache_path"):
-        lines.append(f"Välimuisti: `{result.get('cache_path')}`")
+        lines.append("Hakutulos tallennettiin paikalliseen hakuvälimuistiin.")
 
     return "\n".join(lines).strip()
 
