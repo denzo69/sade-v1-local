@@ -711,10 +711,10 @@ def extract_memory_command(message: str) -> Optional[str]:
 def ask_ollama(prompt: str) -> str:
     config = load_config()
     try:
-        text = provider_from_config(config).generate(prompt).text
+        text = str(provider_from_config(config).generate(prompt).text or "").strip()
     except ModelProviderError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    if not text.strip():
+    if not text:
         raise HTTPException(
             status_code=502,
             detail="Model provider returned an empty response. Check the selected model, Ollama logs, and model availability.",
@@ -2583,6 +2583,30 @@ def chat(request: ChatRequest):
         )
 
     tool_result = route_tool_request(PROJECT_PATH, request.message)
+
+    if not tool_result.get("handled"):
+        try:
+            from app import web_search as web_search_module
+
+            if web_search_module.is_current_info_request(request.message):
+                search_result = web_search_module.web_search(PROJECT_PATH, request.message, max_results=6)
+                tool_result = {
+                    "handled": True,
+                    "tool": "web_search",
+                    "result": search_result,
+                    "reply": web_search_module.format_web_search_reply(search_result),
+                    "actions": ([
+                        {"label": "Review sources", "message": "Review sources"},
+                        {"label": "Deepen search", "message": f"web search {request.message} 2025 2026 report"},
+                    ] if search_result.get("ok") and search_result.get("results") else []),
+                }
+        except Exception as error:
+            tool_result = {
+                "handled": True,
+                "tool": "web_search",
+                "result": {"ok": False, "error": str(error), "query": request.message},
+                "reply": f"Web search routing failed before the model could answer: {error}",
+            }
 
     if tool_result.get("handled"):
         reply = str(tool_result.get("reply") or "").strip()

@@ -262,3 +262,41 @@ def test_chat_weather_request_returns_visible_web_search_reply(isolated_main: Pa
     assert "Lieksa weather" in body["reply"]
 
     client.close()
+
+
+def test_chat_current_info_fallback_bypasses_empty_model_reply(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_search(_root: Path, query: str, max_results: int = 6):
+        return {
+            "ok": True,
+            "query": query,
+            "provider": "test",
+            "results": [
+                {
+                    "rank": 1,
+                    "title": "Fallback weather result",
+                    "url": "https://example.test/fallback-weather",
+                    "source": "example.test",
+                    "snippet": "Weather fallback result",
+                }
+            ],
+        }
+
+    class EmptyProvider:
+        def generate(self, prompt: str):
+            return SimpleNamespace(text="")
+
+    monkeypatch.setattr(main, "route_tool_request", lambda path, message: {"handled": False, "reason": "test"})
+    monkeypatch.setattr("app.web_search.web_search", fake_search)
+    monkeypatch.setattr(main, "provider_from_config", lambda config: EmptyProvider())
+    monkeypatch.setattr(main, "log_tool_event", lambda *a, **k: None)
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+
+    client, headers = authenticated_client(isolated_main)
+    response = client.post("/chat", json={"message": "Saa Lieksa"}, headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"].strip()
+    assert "Fallback weather result" in body["reply"]
+
+    client.close()
