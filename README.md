@@ -101,8 +101,8 @@ More detail: [QUICKSTART.md](QUICKSTART.md)
 Current local status:
 
 ```text
-96 passed locally
-coverage: run pytest-cov locally with the command below
+125 passed locally
+coverage: 71% total, with targeted hardening around RAG, web search, model provider, and tool routing
 GitHub Actions: passing
 ```
 

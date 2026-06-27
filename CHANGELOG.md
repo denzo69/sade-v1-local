@@ -2,6 +2,26 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.2-reliability-hardening] - 2026-06-27
+
+### Added
+
+- Added targeted reliability tests for the highest-risk AI integration paths:
+  - RAG retrieval ranking, source filtering, strict document intent, chat-log exclusion, and curated upload selection.
+  - Web search provider failures, Google/Brave provider parsing, cache behavior, source review, and weather-source summarization.
+  - Ollama/model provider response handling, unknown provider rejection, and connection-error wrapping.
+  - Tool-router routing for guarded file tools, semantic search, status/log routes, and tool-error handling.
+
+### Testing
+
+- Local test status: `125 passed`.
+- Total coverage: `71%`.
+- Key coverage improvements:
+  - `app/rag_engine.py`: `52%` -> `80%`.
+  - `app/web_search.py`: `61%` -> `81%`.
+  - `app/model_provider.py`: `72%` -> `95%`.
+  - `app/tool_router.py`: `47%` -> `69%`.
+
 ## [0.1.1-portfolio-polish] - 2026-06-27
 
 ### Added
