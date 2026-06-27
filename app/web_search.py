@@ -591,6 +591,14 @@ def is_source_review_request(message: str) -> bool:
 
 def extract_web_query(message: str) -> str:
     text = " ".join((message or "").strip().split())
+    lower = text.lower()
+
+    if re.match(
+        r"^(tarkista|tarkasta|katso|selvit[aä])\s+.+\s+(sivulta|verkkosivulta|nettisivulta|website(?:sta)?|site(?:lta)?)\b",
+        lower,
+        flags=re.I,
+    ):
+        return text.split(maxsplit=1)[1].strip(" :.-")
 
     prefixes = [
         "hae verkosta",
@@ -606,8 +614,6 @@ def extract_web_query(message: str) -> str:
         "web search",
     ]
 
-    lower = text.lower()
-
     for prefix in prefixes:
         if lower.startswith(prefix):
             return text[len(prefix):].strip(" :.-")
@@ -622,6 +628,13 @@ def extract_web_query(message: str) -> str:
 
 def is_explicit_web_search_request(message: str) -> bool:
     text = " ".join((message or "").lower().split())
+    if re.match(
+        r"^(tarkista|tarkasta|katso|selvit[aä])\s+.+\s+(sivulta|verkkosivulta|nettisivulta|website(?:sta)?|site(?:lta)?)\b",
+        text,
+        flags=re.I,
+    ):
+        return True
+
     triggers = [
         "hae verkosta",
         "etsi verkosta",

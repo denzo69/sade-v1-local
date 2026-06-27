@@ -93,3 +93,15 @@ def test_status_does_not_claim_unimplemented_integrations(tmp_path: Path) -> Non
     assert status["rag_integration"] is False
     assert status["semantic_memory_integration"] is False
     assert status["goal_engine_integration"] is False
+
+
+def test_page_check_request_routes_to_web_search(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("app.web_search.web_search", _fake_search)
+
+    message = "Tarkasta Veikkauksen sivulta edellinen loton oikea numero"
+    result = route_tool_request(tmp_path, message)
+
+    assert result["handled"] is True
+    assert result["tool"] == "web_search"
+    assert result["result"]["query"] == "Veikkauksen sivulta edellinen loton oikea numero"
+    assert route_tool_preview(message)["tool"] == "web_search"

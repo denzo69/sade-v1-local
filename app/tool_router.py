@@ -662,6 +662,7 @@ def route_tool_request(project_path: Path, message: str) -> Dict[str, Any]:
         format_web_search_reply,
         format_web_search_status_reply,
         format_source_review_reply,
+        is_explicit_web_search_request,
         is_source_review_request,
         is_web_search_status_request,
         is_web_search_trial_request,
@@ -718,6 +719,7 @@ def route_tool_request(project_path: Path, message: str) -> Dict[str, Any]:
         "web search",
         "search web",
     ])
+    explicit_web_search = explicit_web_search or is_explicit_web_search_request(original)
     pending_web_search = False if explicit_web_search else consume_pending_web_search(project_path, original)
 
     if explicit_web_search or pending_web_search:
@@ -1065,7 +1067,7 @@ def route_tool_preview(message: str) -> Dict[str, Any]:
     if not text:
         return {"would_route": False, "tool": None, "reason": "empty_message"}
 
-    from app.web_search import is_web_search_status_request, is_web_search_trial_request
+    from app.web_search import is_explicit_web_search_request, is_web_search_status_request, is_web_search_trial_request
     if is_web_search_status_request(message):
         return {"would_route": True, "tool": "web_search_status"}
     if is_web_search_trial_request(message):
@@ -1087,6 +1089,9 @@ def route_tool_preview(message: str) -> Dict[str, Any]:
         "web search",
         "search web",
     ]):
+        return {"would_route": True, "tool": "web_search"}
+
+    if is_explicit_web_search_request(message):
         return {"would_route": True, "tool": "web_search"}
 
     # Goal Engine v1.1 — priorisoitu preview ennen yleistä omatilaa.
