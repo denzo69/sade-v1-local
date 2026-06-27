@@ -746,8 +746,20 @@ def is_current_info_request(message: str) -> bool:
     text = " ".join((message or "").lower().split()).strip(" .!?;:")
     if not text:
         return False
+    ascii_text = (
+        text
+        .replace("å", "a")
+        .replace("ä", "a")
+        .replace("ö", "o")
+        .replace("ã¥", "a")
+        .replace("ã¤", "a")
+        .replace("ã¶", "o")
+    )
 
-    if re.match(r"^(sää|saa|weather)\s+[a-zåäö0-9 .'-]{2,80}$", text, flags=re.I):
+    if re.match(r"^(saa|weather)\s+[a-z0-9 .'?_-]{2,80}$", ascii_text, flags=re.I):
+        return True
+
+    if re.match(r"^s\?+\s+[a-z0-9 .'?_-]{2,80}$", ascii_text, flags=re.I):
         return True
 
     current_terms = (
@@ -782,7 +794,22 @@ def is_current_info_request(message: str) -> bool:
         "huomenna",
     )
 
-    return any(term in text for term in current_terms) and any(term in text for term in freshness_terms)
+    current_terms_ascii = tuple(
+        term.replace("å", "a").replace("ä", "a").replace("ö", "o")
+        for term in current_terms
+    )
+    freshness_terms_ascii = tuple(
+        term.replace("å", "a").replace("ä", "a").replace("ö", "o")
+        for term in freshness_terms
+    )
+
+    return (
+        any(term in text for term in current_terms)
+        or any(term in ascii_text for term in current_terms_ascii)
+    ) and (
+        any(term in text for term in freshness_terms)
+        or any(term in ascii_text for term in freshness_terms_ascii)
+    )
 
 
 def is_web_search_status_request(message: str) -> bool:
