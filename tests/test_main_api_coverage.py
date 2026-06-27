@@ -300,3 +300,342 @@ def test_chat_current_info_fallback_bypasses_empty_model_reply(isolated_main: Pa
     assert "Fallback weather result" in body["reply"]
 
     client.close()
+
+
+def test_backup_learning_dev_and_task_api_routes(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+    monkeypatch.setattr(main, "log_tool_event", lambda *a, **k: None)
+    monkeypatch.setattr(main, "create_export_file", lambda: {"ok": True, "export_path": "export.zip"})
+    monkeypatch.setattr(main, "create_backup_files", lambda: {"ok": True, "backup_path": "backup"})
+    monkeypatch.setattr(main, "list_backup_archives", lambda path: {"ok": True, "items": ["backup.zip"]})
+    monkeypatch.setattr(main, "create_backup_archive", lambda path: {"ok": True, "backup_name": "backup.zip"})
+    monkeypatch.setattr(main, "restore_backup_archive", lambda path, backup_name, confirmation: {"ok": confirmation == "RESTORE", "backup_name": backup_name})
+    monkeypatch.setattr(main, "get_learning_review_status", lambda path: {"ok": True, "count": 0})
+    monkeypatch.setattr(main, "create_learning_review_for_file", lambda path, relative_path, force=False: {"ok": True, "relative_path": relative_path, "force": force})
+    monkeypatch.setattr(main, "create_reviews_for_recent_learning", lambda path, max_files=10, force=False: {"ok": True, "created_count": max_files, "skipped_count": 0, "failed_count": 0})
+    monkeypatch.setattr(main, "read_learning_reviews", lambda path, limit=50: {"ok": True, "limit": limit, "items": []})
+    monkeypatch.setattr(main, "get_learning_status", lambda path: {"ok": True, "pending_files": 2})
+    monkeypatch.setattr(main, "scan_uploads_for_learning", lambda path, include_already_ingested=False, limit=100: {"ok": True, "candidate_count": limit, "include": include_already_ingested})
+    monkeypatch.setattr(main, "run_autonomous_learning_loop", lambda path, max_files=10, add_to_memory=True, add_to_semantic=True: {"ok": True, "learned_count": max_files, "failed_count": 0})
+    monkeypatch.setattr(main, "read_learning_log", lambda path, limit=50: {"ok": True, "limit": limit, "items": []})
+    monkeypatch.setattr(main, "read_codebase_map", lambda path: {"ok": True, "file_count": 1, "route_count": 2, "function_count": 3, "class_count": 4})
+    monkeypatch.setattr(main, "build_codebase_map", lambda path, include_snippets=False: {"ok": True, "file_count": 1, "route_count": 2, "function_count": 3, "class_count": 4, "include_snippets": include_snippets})
+    monkeypatch.setattr(main, "find_in_codebase_map", lambda path, query, limit=20: {"ok": True, "query": query, "limit": limit, "results": []})
+
+    client, headers = authenticated_client(isolated_main)
+
+    assert client.post("/export", headers=headers).json()["export_path"] == "export.zip"
+    assert client.post("/backup", headers=headers).json()["backup_path"] == "backup"
+    assert client.get("/backup/list").json()["items"] == ["backup.zip"]
+    assert client.post("/backup/archive", headers=headers).json()["backup_name"] == "backup.zip"
+    assert client.post("/backup/restore", json={"backup_name": "backup.zip", "confirmation": "RESTORE"}, headers=headers).json()["ok"] is True
+
+    assert client.get("/learning/review/status").json()["ok"] is True
+    assert client.post("/learning/review/file", json={"relative_path": "uploads/a.md", "force": True}, headers=headers).json()["force"] is True
+    assert client.post("/learning/review/file", json={"relative_path": "   "}, headers=headers).status_code == 400
+    assert client.post("/learning/review/recent", json={"max_files": 3, "force": True}, headers=headers).json()["created_count"] == 3
+    assert client.post("/learning/review/log", json={"limit": 7}, headers=headers).json()["limit"] == 7
+    assert client.get("/learning/status").json()["pending_files"] == 2
+    assert client.post("/learning/scan", json={"limit": 4, "include_already_ingested": True}, headers=headers).json()["candidate_count"] == 4
+    assert client.post("/learning/run", json={"max_files": 5, "add_to_memory": True, "add_to_semantic": False}, headers=headers).json()["learned_count"] == 5
+    assert client.post("/learning/log", json={"limit": 9}, headers=headers).json()["limit"] == 9
+
+    assert client.get("/dev/status").json()["map_exists"] is True
+    assert client.post("/dev/map", json={"include_snippets": True}, headers=headers).json()["include_snippets"] is True
+    assert client.get("/dev/map").json()["file_count"] == 1
+    assert client.post("/dev/find", json={"query": "rag", "limit": 6}, headers=headers).json()["limit"] == 6
+    assert client.post("/dev/find", json={"query": ""}, headers=headers).status_code == 400
+
+    client.close()
+
+
+def test_task_api_routes_and_chat_command_helpers(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+    monkeypatch.setattr(main, "route_tool_request", lambda path, prompt: {"handled": True, "tool": "unit", "reply": "tool reply", "result": {"ok": True}})
+
+    client, headers = authenticated_client(isolated_main)
+
+    assert client.get("/tasks/status").json()["ok"] is True
+    added = client.post("/tasks/add", json={"prompt": "project status", "title": "Status", "tags": ["unit"], "priority": 2}, headers=headers).json()
+    assert added["ok"] is True
+    task_id = added["task"]["id"]
+    assert client.post("/tasks/add", json={"prompt": ""}, headers=headers).status_code == 400
+    assert client.post("/tasks/list", json={"limit": 10}, headers=headers).json()["count"] >= 1
+    assert client.post("/tasks/run", json={"task_id": task_id}, headers=headers).json()["task"]["status"] == "done"
+    assert client.post("/tasks/run", json={"task_id": ""}, headers=headers).status_code == 400
+
+    cancel_added = client.post("/tasks/add", json={"prompt": "cancel me"}, headers=headers).json()
+    cancel_id = cancel_added["task"]["id"]
+    assert client.post("/tasks/cancel", json={"task_id": cancel_id}, headers=headers).json()["task"]["status"] == "cancelled"
+    assert client.post("/tasks/cancel", json={"task_id": ""}, headers=headers).status_code == 400
+    assert client.post("/tasks/history", json={"limit": 20}, headers=headers).json()["count"] >= 1
+    assert client.post("/tasks/run-next", headers=headers).json()["ok"] in {True, False}
+
+    empty = main._format_task_list_for_chat({"tasks": []})
+    listed = main._format_task_list_for_chat({"tasks": [{"id": "1", "status": "queued", "title": "A", "priority": 1}]})
+    add_chat = main._handle_task_chat_command("lisää tehtävä: tee testi")
+    list_chat = main._handle_task_chat_command("näytä tehtävät")
+    history_chat = main._handle_task_chat_command("task history")
+    unknown = main._handle_task_chat_command("ei tehtäväkomento")
+
+    assert "tyhjä" in empty
+    assert "Tehtäväjonossa" in listed
+    assert add_chat["handled"] is True
+    assert list_chat["handled"] is True
+    assert history_chat["handled"] is True
+    assert unknown["handled"] is False
+
+    client.close()
+
+
+def test_auth_and_ui_error_paths(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    client = TestClient(main.app)
+
+    missing_login = client.get("/login")
+    assert missing_login.status_code == 200
+
+    main.LOGIN_TEMPLATE_PATH.unlink()
+    assert client.get("/login").status_code == 500
+
+    # Recreate template and exercise auth failures before successful login.
+    main.LOGIN_TEMPLATE_PATH.write_text("<html>login</html>", encoding="utf-8")
+    assert client.post("/auth/login", json={"username": "nobody", "password": "bad"}).status_code == 503
+
+    create_user(isolated_main.parent, "jani", "pitka-turvallinen-salasana")
+    denied = client.post("/auth/login", json={"username": "jani", "password": "bad"})
+    assert denied.status_code == 401
+
+    login = client.post("/auth/login", json={"username": "jani", "password": "pitka-turvallinen-salasana"})
+    assert login.status_code == 200
+    headers = {"X-CSRF-Token": login.json()["csrf_token"]}
+    assert client.get("/auth/status").json()["authenticated"] is True
+    assert client.get("/ui").status_code == 200
+    main.UI_TEMPLATE_PATH.unlink()
+    assert client.get("/ui").status_code == 500
+    assert client.post("/auth/logout", headers=headers).json()["ok"] is True
+
+    client.close()
+
+
+def test_chat_learning_review_and_rag_helper_paths(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "get_learning_status", lambda path: {"pending_files": 2, "learning_events": 3, "uploads_path": "uploads"})
+    monkeypatch.setattr(main, "scan_uploads_for_learning", lambda path, include_already_ingested=False, limit=100: {"candidates": [{"relative_path": f"uploads/{i}.md", "size_bytes": i} for i in range(22)], "skipped_count": 1})
+    monkeypatch.setattr(main, "run_autonomous_learning_loop", lambda path, **kwargs: {"learned": [{"relative_path": "uploads/a.md"}], "failed": [{"relative_path": "uploads/b.md", "error": "boom"}]})
+    monkeypatch.setattr(main, "read_learning_log", lambda path, limit=30: {"items": [{"time": "now", "event": "file_learned", "relative_path": "uploads/a.md"}]})
+    monkeypatch.setattr(main, "create_learning_review_for_file", lambda path, rel, force=False: {"review": {"review_id": "r1", "relative_path": rel, "terms": ["rag"], "future_tasks": ["test"]}})
+    monkeypatch.setattr(main, "create_reviews_for_recent_learning", lambda path, max_files=10, force=False: {"created": [{"relative_path": "uploads/a.md", "title": "A"}], "skipped": [{"relative_path": "uploads/b.md", "reason": "old"}], "failed": [{"relative_path": "uploads/c.md", "error": "bad"}]})
+    monkeypatch.setattr(main, "read_learning_reviews", lambda path, limit=20: {"items": [{"review_id": "r1", "title": "A", "relative_path": "uploads/a.md"}]})
+    monkeypatch.setattr(main, "get_learning_review_status", lambda path: {"reviews_count": 1, "reviews_md": "reviews.md", "reviews_log": "reviews.jsonl"})
+    monkeypatch.setattr(main, "rag_status", lambda path: {"chat_log_default": False, "default_n_results": 8, "semantic_memory": {"ok": True}})
+    monkeypatch.setattr(main, "rag_search", lambda *a, **k: {"ok": True, "query": a[1], "results": [{"rank": 1, "source_type": "doc", "score": 1, "term_coverage": 1, "text": "hit"}]})
+    monkeypatch.setattr(main, "format_rag_search_reply", lambda result: f"RAG reply: {result['query']}")
+
+    assert "Autonomous Learning Loop" in main._handle_learning_chat_command("learning status")["reply"]
+    assert "...ja 2 muuta" in main._handle_learning_chat_command("learning scan")["reply"]
+    assert "Oppimiskierros valmis" in main._handle_learning_chat_command("learning loop")["reply"]
+    assert "Viimeisimmät" in main._handle_learning_chat_command("learning log")["reply"]
+    assert main._handle_learning_chat_command("not learning")["handled"] is False
+
+    assert "Anna tiedostopolku" in main._handle_learning_review_chat_command("learning review file")["reply"]
+    assert "Review ID" in main._handle_learning_review_chat_command("learning review file uploads/a.md")["reply"]
+    assert "Oppimiskatsausajo" in main._handle_learning_review_chat_command("learning review")["reply"]
+    assert "Viimeisimmät" in main._handle_learning_review_chat_command("learning review log")["reply"]
+    assert "Learning Review v1" in main._handle_learning_review_chat_command("learning review status")["reply"]
+    assert main._handle_learning_review_chat_command("not review")["handled"] is False
+
+    assert main._extract_rag_query_from_chat("rag search memory policy") == "memory policy"
+    assert main._extract_rag_query_from_chat("hello") is None
+    assert "RAG Engine" in main._handle_rag_chat_command("rag status")["reply"]
+    assert "RAG reply" in main._handle_rag_chat_command("rag search memory policy")["reply"]
+    assert main._handle_rag_chat_command("hello")["handled"] is False
+
+
+def test_chat_command_paths_and_behavior_endpoints(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "append_chat_log", lambda *a, **k: {"ok": True})
+    monkeypatch.setattr(main, "try_handle_dev_command", lambda *a, **k: None, raising=False)
+    monkeypatch.setattr("app.dev_chat_commands.try_handle_dev_command", lambda path, message: "dev reply")
+
+    client, headers = authenticated_client(isolated_main)
+
+    dev = client.post("/chat", json={"message": "dev map"}, headers=headers)
+    assert dev.status_code == 200
+    assert "Koodikartta" in dev.json()["reply"]
+
+    assert client.get("/behavior/status").json()["ok"] is True
+    analyzed = client.post("/behavior/analyze", json={"message": "Virhe 500 ja korjaa"}, headers=headers).json()
+    assert analyzed["ok"] is True
+    assert "summary" in analyzed
+
+    client.close()
+
+
+def test_format_helpers_empty_and_existing_cases(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    assert "ei ollut" in main._format_learning_run_for_chat({"learned": [], "failed": []})
+    assert "ei löytynyt" in main._format_learning_scan_for_chat({"candidates": [], "skipped_count": 4})
+    already = main._format_learning_review_result_for_chat(
+        {"already_exists": True, "review": {"review_id": "old", "relative_path": "uploads/a.md"}}
+    )
+    assert "jo oppimiskatsaus" in already
+    empty_recent = main._format_recent_learning_reviews_for_chat({"created": [], "skipped": [], "failed": []})
+    assert "Luotu: 0" in empty_recent
+
+    monkeypatch.setattr(main, "read_learning_log", lambda path, limit=30: {"items": []})
+    monkeypatch.setattr(main, "read_learning_reviews", lambda path, limit=20: {"items": []})
+    assert "tyhjä" in main._handle_learning_chat_command("learning log")["reply"]
+    assert "ei ole vielä" in main._handle_learning_review_chat_command("learning review log")["reply"]
+
+
+def test_ollama_status_success_connection_and_generic_errors(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeOllamaResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self) -> bytes:
+            return b'{"response": "ok"}'
+
+    monkeypatch.setattr(main.urllib.request, "urlopen", lambda request, timeout=30: FakeOllamaResponse())
+    success = main.ollama_status()
+    assert success["ok"] is True
+    assert success["status"] == "connected"
+    assert success["response"] == "ok"
+
+    def offline(*args, **kwargs):
+        raise main.urllib.error.URLError("offline")
+
+    monkeypatch.setattr(main.urllib.request, "urlopen", offline)
+    connection_error = main.ollama_status()
+    assert connection_error["ok"] is False
+    assert connection_error["status"] == "connection_error"
+
+    def broken_json(*args, **kwargs):
+        raise RuntimeError("bad provider response")
+
+    monkeypatch.setattr(main.urllib.request, "urlopen", broken_json)
+    generic_error = main.ollama_status()
+    assert generic_error["ok"] is False
+    assert generic_error["status"] == "error"
+
+
+def test_memory_config_and_tool_file_api_routes(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+
+    client, headers = authenticated_client(isolated_main)
+
+    assert client.get("/config").json()["ok"] is True
+    updated = client.post(
+        "/config",
+        json={"ollama_model": "unit-model", "temperature": 0.2, "num_ctx": 2048},
+        headers=headers,
+    ).json()
+    assert updated["ok"] is True
+    assert updated["config"]["ollama_model"] == "unit-model"
+
+    assert client.get("/memory/sade-memory").json()["ok"] is True
+    assert client.get("/memory/chatlog").json()["ok"] is True
+    assert client.post(
+        "/memory/sade-memory",
+        json={"title": "Coverage note", "text": "Remember the coverage lift.", "tags": ["test"]},
+        headers=headers,
+    ).json()["ok"] is True
+    assert client.post(
+        "/memory/sade-memory",
+        json={"title": "Empty", "text": "   "},
+        headers=headers,
+    ).status_code == 400
+    assert client.post(
+        "/memory/visible-chat",
+        json={"content": "You: hello\nAssistant: hi"},
+        headers=headers,
+    ).json()["ok"] is True
+    assert client.post("/memory/visible-chat", json={"content": "   "}, headers=headers).status_code == 400
+    assert client.post("/memory/search", json={"query": "coverage"}, headers=headers).json()["ok"] is True
+    assert client.post("/memory/search", json={"query": "   "}, headers=headers).status_code == 400
+
+    assert client.get("/tools/status").json()["ok"] is True
+    assert client.get("/tools/list").json()["ok"] is True
+    assert client.get("/tools/policies").json()["ok"] is True
+    assert client.get("/tools/project-status").json()["ok"] is True
+
+    written = client.post(
+        "/tools/files/write",
+        json={"relative_path": "tmp/coverage_api.txt", "content": "hello", "overwrite": False},
+        headers=headers,
+    ).json()
+    assert written["ok"] is True
+    appended = client.post(
+        "/tools/files/append",
+        json={"relative_path": "tmp/coverage_api.txt", "content": " world"},
+        headers=headers,
+    ).json()
+    assert appended["ok"] is True
+    read_back = client.post(
+        "/tools/files/read",
+        json={"relative_path": "tmp/coverage_api.txt", "max_chars": 100},
+        headers=headers,
+    ).json()
+    assert "hello world" in read_back["content"]
+    listed = client.post(
+        "/tools/files/list",
+        json={"relative_path": "tmp", "max_items": 10, "include_hidden": False},
+        headers=headers,
+    ).json()
+    assert listed["ok"] is True
+    assert listed["count"] >= 1
+
+    assert client.post("/tools/files/read", json={"relative_path": "../secret.txt"}, headers=headers).status_code == 400
+    assert client.post(
+        "/tools/files/write",
+        json={"relative_path": "../secret.txt", "content": "x"},
+        headers=headers,
+    ).status_code == 400
+    assert client.post(
+        "/tools/files/append",
+        json={"relative_path": "../secret.txt", "content": "x"},
+        headers=headers,
+    ).status_code == 400
+
+    client.close()
+
+
+def test_chat_tool_empty_reply_memory_and_llm_paths(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+    monkeypatch.setattr(main, "log_tool_event", lambda *a, **k: None)
+    monkeypatch.setattr(main, "write_trace", lambda *a, **k: None)
+    monkeypatch.setattr("app.dev_chat_commands.try_handle_dev_command", lambda path, message: None)
+
+    client, headers = authenticated_client(isolated_main)
+
+    remembered = client.post(
+        "/chat",
+        json={"message": "muista että coverage-testit ovat tärkeitä"},
+        headers=headers,
+    )
+    assert remembered.status_code == 200
+    assert remembered.json()["reply"].strip()
+
+    monkeypatch.setattr(main, "extract_memory_command", lambda message: None)
+    monkeypatch.setattr(main, "_handle_learning_review_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_learning_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_task_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_rag_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(
+        main,
+        "route_tool_request",
+        lambda path, message: {"handled": True, "tool": "project_status", "reply": "", "result": {"ok": True}},
+    )
+    tool_empty = client.post("/chat", json={"message": "use an empty tool reply"}, headers=headers)
+    assert tool_empty.status_code == 200
+    assert "tool returned no visible reply" in tool_empty.json()["reply"]
+
+    monkeypatch.setattr(main, "route_tool_request", lambda path, message: {"handled": False})
+    monkeypatch.setattr(main, "ask_ollama", lambda prompt: "llm reply")
+    llm = client.post("/chat", json={"message": "ordinary hello"}, headers=headers)
+    assert llm.status_code == 200
+    assert llm.json()["reply"] == "llm reply"
+
+    assert client.post("/chat", json={"message": "   "}, headers=headers).status_code == 400
+
+    client.close()

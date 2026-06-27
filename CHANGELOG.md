@@ -2,6 +2,25 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.3-coverage-lift] - 2026-06-27
+
+### Added
+
+- Added targeted coverage tests for API routes, memory endpoints, tool file operations, config updates, Ollama status handling, and chat routing fallbacks.
+- Added tool-router command coverage for common user-facing commands, file operations, semantic search, preview routing, and guarded error paths.
+- Added live eval runner tests for passing model responses and provider-error handling.
+- Added RAG quality gate tests for passing, empty-result, weak-score, low-coverage, and missing-ranking-reason cases.
+
+### Testing
+
+- Local test status: `156 passed`.
+- Total coverage: `85%`.
+- Key coverage improvements:
+  - `app/main.py`: `77%` -> `84%`.
+  - `app/tool_router.py`: `69%` -> `77%`.
+  - `app/live_evals.py`: `29%` -> `100%`.
+  - `app/rag_quality.py`: `70%` -> `100%`.
+
 ## [0.1.2-reliability-hardening] - 2026-06-27
 
 ### Added

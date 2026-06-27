@@ -101,8 +101,8 @@ More detail: [QUICKSTART.md](QUICKSTART.md)
 Current local status:
 
 ```text
-125 passed locally
-coverage: 71% total, with targeted hardening around RAG, web search, model provider, and tool routing
+156 passed locally
+coverage: 85% total, with targeted hardening around RAG, web search, model provider, tool routing, API routes, and live eval entrypoints
 GitHub Actions: passing
 ```
 
