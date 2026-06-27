@@ -2452,7 +2452,7 @@ def chat(request: ChatRequest):
         if _user_message:
             _command_reply = _try_handle_dev_command(_project_path, str(_user_message))
 
-            if _command_reply is not None:
+            if _command_reply is not None and str(_command_reply).strip():
                 try:
                     append_chat_log(str(_user_message), str(_command_reply))
                 except Exception:
@@ -2585,7 +2585,12 @@ def chat(request: ChatRequest):
     tool_result = route_tool_request(PROJECT_PATH, request.message)
 
     if tool_result.get("handled"):
-        reply = tool_result.get("reply", "Työkalu suoritettiin.")
+        reply = str(tool_result.get("reply") or "").strip()
+        if not reply:
+            reply = (
+                "The request was routed to a tool, but the tool returned no visible reply. "
+                "Check the tool result and server logs."
+            )
 
         tool_name = str(tool_result.get("tool", "tool_router"))
         tool_policy = get_tool_policy(tool_name)

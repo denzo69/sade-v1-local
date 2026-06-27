@@ -230,3 +230,35 @@ def test_ask_ollama_rejects_empty_provider_response(isolated_main: Path, monkeyp
 
     assert exc.value.status_code == 502
     assert "empty response" in exc.value.detail
+
+
+def test_chat_weather_request_returns_visible_web_search_reply(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_search(_root: Path, query: str, max_results: int = 6):
+        return {
+            "ok": True,
+            "query": query,
+            "provider": "test",
+            "results": [
+                {
+                    "rank": 1,
+                    "title": "Lieksa weather",
+                    "url": "https://example.test/weather",
+                    "source": "example.test",
+                    "snippet": "Weather result",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("app.web_search.web_search", fake_search)
+    monkeypatch.setattr(main, "log_tool_event", lambda *a, **k: None)
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+
+    client, headers = authenticated_client(isolated_main)
+    response = client.post("/chat", json={"message": "Sää Lieksa"}, headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"].strip()
+    assert "Lieksa weather" in body["reply"]
+
+    client.close()
