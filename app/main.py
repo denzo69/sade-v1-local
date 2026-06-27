@@ -2724,7 +2724,8 @@ def ui(request: Request):
     content = UI_TEMPLATE_PATH.read_text(encoding="utf-8").replace("__SADE_CSRF_TOKEN__", str(session.get("csrf", "")))
     return HTMLResponse(
         content=content,
-        status_code=200
+        status_code=200,
+        headers={"Cache-Control": "no-store, max-age=0"}
     )
 
     return HTMLResponse(

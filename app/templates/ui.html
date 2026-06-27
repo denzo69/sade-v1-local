@@ -753,8 +753,13 @@ async function sendChat() {
             if (response.ok) {
                 const replyText = (data.reply || data.response || data.answer || data.message || "").trim();
                 if (!replyText) {
-                    addChatLine("Assistant", "No reply was returned by the server. Check model/provider status and server logs.");
-                    document.getElementById("status").innerText = "Empty reply from server.";
+                    const debugPayload = JSON.stringify(data, null, 2);
+                    addChatLine(
+                        "Assistant",
+                        "No visible reply was returned by the server.\n\n" +
+                        "Debug response:\n```json\n" + debugPayload + "\n```"
+                    );
+                    document.getElementById("status").innerText = "Empty reply from server. Debug response shown in chat.";
                     return;
                 }
                 addChatLine("Assistant", replyText);
