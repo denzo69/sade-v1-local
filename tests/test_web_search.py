@@ -68,8 +68,35 @@ def test_source_review_uses_latest_successful_search(tmp_path: Path, monkeypatch
 
     assert result["tool"] == "web_source_review"
     assert result["result"]["verified_count"] == 1
+    assert "answer_summary" in result["result"]
+    assert "## Vastaus" in result["reply"]
     assert "Tarkistettu ote" in result["reply"]
     assert "Semanttiseen muistiin tallennusta ei tarjota" in result["reply"]
+
+
+def test_source_review_summarizes_weather_observation(tmp_path: Path, monkeypatch) -> None:
+    cache = tmp_path / "memory" / "web_search_cache"
+    cache.mkdir(parents=True)
+    (cache / "20260627_weather.json").write_text(
+        '{"ok": true, "query": "Saa Lieksa", "results": [{"title": "Sää Lieksa", "url": "https://example.test/weather", "source": "example.test"}]}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "app.web_search.inspect_source",
+        lambda url: {
+            "ok": True,
+            "url": url,
+            "title": "Sää Lieksa",
+            "description": "Lieksa: lämpötila +14 °C, heikkoa sadetta ja tuuli 3 m/s.",
+            "preview": "",
+        },
+    )
+
+    result = route_tool_request(tmp_path, "Tarkista lähteet")
+
+    assert result["tool"] == "web_source_review"
+    assert "+14 °C" in result["reply"]
+    assert "Vastaus lähteiden perusteella" in result["reply"]
 
 
 def test_search_reply_recommends_review_before_memory() -> None:

@@ -23,6 +23,7 @@ import os
 import re
 import socket
 import time
+import unicodedata
 import urllib.parse
 import urllib.error
 import urllib.request
@@ -638,8 +639,102 @@ def review_latest_search_sources(project_root: Optional[Path] = None) -> Dict[st
         "query": search.get("query"),
         "sources": sources,
         "verified_count": sum(1 for item in sources if item.get("ok")),
+        "answer_summary": build_source_based_answer(search.get("query") or "", sources),
         "truth_boundary": "Tarkistus vahvistaa sivun saavutettavuuden ja sivulta luetun otteen, ei kaikkien väitteiden tieteellistä paikkansapitävyyttä.",
     }
+
+
+def _ascii_finnish(text: str) -> str:
+    value = str(text or "").lower()
+    try:
+        value = value.encode("latin1").decode("utf-8")
+    except Exception:
+        pass
+    value = (
+        unicodedata.normalize("NFKD", value)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    return value.replace("?", "a")
+
+
+def _looks_like_weather_query(query: str) -> bool:
+    text = _ascii_finnish(query)
+    return any(term in text for term in ("saa", "weather", "foreca", "ilmatieteen", "supersaa"))
+
+
+def _compact_excerpt(text: str, *, max_chars: int = 260) -> str:
+    compact = " ".join(str(text or "").split())
+    if len(compact) <= max_chars:
+        return compact
+    return compact[:max_chars].rstrip() + "..."
+
+
+def _extract_weather_observations(sources: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    observations: List[Dict[str, str]] = []
+    weather_pattern = re.compile(
+        r"(.{0,80}(?:[-+]?\d{1,2}\s*(?:°| astetta| c\b|celsius)|sade|tuuli|pilv|lämp|lamp|pouta|ukkonen).{0,120})",
+        flags=re.I,
+    )
+
+    for source in sources:
+        if not source.get("ok"):
+            continue
+
+        combined = " ".join(
+            str(source.get(key) or "")
+            for key in ("description", "preview", "snippet")
+        )
+        match = weather_pattern.search(combined)
+        if not match:
+            continue
+
+        observations.append({
+            "title": str(source.get("title") or "Lähde"),
+            "url": str(source.get("final_url") or source.get("url") or ""),
+            "excerpt": _compact_excerpt(match.group(1), max_chars=240),
+        })
+
+    return observations[:3]
+
+
+def build_source_based_answer(query: str, sources: List[Dict[str, Any]]) -> str:
+    verified = [item for item in sources if item.get("ok")]
+    if not verified:
+        return "En saanut avattua lähdesivuja luotettavasti, joten en muodosta varsinaista vastausta."
+
+    if _looks_like_weather_query(query):
+        observations = _extract_weather_observations(sources)
+        if observations:
+            lines = [
+                "Tarkistin säähaun lähteitä ja löysin näistä lähdeotteista sääarvoja tai sääkuvauksia:",
+                "",
+            ]
+            for item in observations:
+                lines.append(f"- {item['excerpt']} ({item['title']})")
+            lines.extend([
+                "",
+                "Huom: tämä on lähdesivuilta luettu ote, ei erillinen meteorologinen laskenta. Avaa lähde varmistaaksesi aivan viimeisimmän tilanteen.",
+            ])
+            return "\n".join(lines).strip()
+
+        best_sources = ", ".join((item.get("source") or item.get("title") or "lähde") for item in verified[:3])
+        return (
+            "Tarkistin säähaun lähteitä, mutta en saanut sivuilta varmasti poimittua yhtä ajantasaista lämpötila-arvoa. "
+            f"Luotettavimmat avattavat lähteet tähän hakuun ovat: {best_sources}. "
+            "Avaa Ilmatieteen laitoksen tai Forecan lähde lopullista nykyhetken lukemaa varten."
+        )
+
+    excerpts = []
+    for item in verified[:3]:
+        excerpt = _compact_excerpt(item.get("description") or item.get("preview") or item.get("snippet") or "", max_chars=220)
+        if excerpt:
+            excerpts.append(f"- {excerpt} ({item.get('title') or 'lähde'})")
+
+    if not excerpts:
+        return "Lähteet avautuivat, mutta niistä ei löytynyt selkeää tekstikatkelmaa automaattiseen yhteenvetoon."
+
+    return "Tarkistettujen lähteiden perusteella olennaiset otteet ovat:\n\n" + "\n".join(excerpts)
 
 
 def format_source_review_reply(result: Dict[str, Any]) -> str:
@@ -647,6 +742,12 @@ def format_source_review_reply(result: Dict[str, Any]) -> str:
         return f"Lähteiden tarkistus ei onnistunut: {result.get('error', 'tuntematon virhe')}"
     lines = [
         "# Lähteiden tarkistus", "",
+        "## Vastaus lähteiden perusteella",
+        "",
+        result.get("answer_summary") or "Lähteet tarkistettiin, mutta yhteenvetoa ei voitu muodostaa.",
+        "",
+        "## Tarkistetut lähteet",
+        "",
         f"Hakukysely: `{result.get('query')}`",
         f"Avattavissa: {result.get('verified_count', 0)}/{len(result.get('sources') or [])}", "",
     ]
@@ -667,8 +768,8 @@ def format_source_review_reply(result: Dict[str, Any]) -> str:
 
 
 def is_source_review_request(message: str) -> bool:
-    text = " ".join((message or "").lower().split()).strip(" .!?;:")
-    return any(phrase in text for phrase in ("tarkista lähteet", "avaa ja tarkista lähteet", "tarkista hakutulokset"))
+    text = _ascii_finnish(" ".join((message or "").split()).strip(" .!?;:"))
+    return any(phrase in text for phrase in ("tarkista lahteet", "avaa ja tarkista lahteet", "tarkista hakutulokset", "review sources"))
 
 
 def extract_web_query(message: str) -> str:
@@ -746,15 +847,7 @@ def is_current_info_request(message: str) -> bool:
     text = " ".join((message or "").lower().split()).strip(" .!?;:")
     if not text:
         return False
-    ascii_text = (
-        text
-        .replace("å", "a")
-        .replace("ä", "a")
-        .replace("ö", "o")
-        .replace("ã¥", "a")
-        .replace("ã¤", "a")
-        .replace("ã¶", "o")
-    )
+    ascii_text = _ascii_finnish(text)
 
     if re.match(r"^(saa|weather)\s+[a-z0-9 .'?_-]{2,80}$", ascii_text, flags=re.I):
         return True
@@ -794,14 +887,8 @@ def is_current_info_request(message: str) -> bool:
         "huomenna",
     )
 
-    current_terms_ascii = tuple(
-        term.replace("å", "a").replace("ä", "a").replace("ö", "o")
-        for term in current_terms
-    )
-    freshness_terms_ascii = tuple(
-        term.replace("å", "a").replace("ä", "a").replace("ö", "o")
-        for term in freshness_terms
-    )
+    current_terms_ascii = tuple(_ascii_finnish(term) for term in current_terms)
+    freshness_terms_ascii = tuple(_ascii_finnish(term) for term in freshness_terms)
 
     return (
         any(term in text for term in current_terms)
@@ -813,13 +900,13 @@ def is_current_info_request(message: str) -> bool:
 
 
 def is_web_search_status_request(message: str) -> bool:
-    text = " ".join((message or "").lower().split()).strip(" .!?;:")
+    text = _ascii_finnish(" ".join((message or "").split()).strip(" .!?;:"))
     phrases = (
-        "toimiiko haku netistä", "toimiiko haku verkosta", "toimiiko verkkohaku",
-        "toimii haku netistä", "toimii haku verkosta", "sinulla toimii haku netistä",
-        "onko verkkohaku käytössä", "onko haku netistä käytössä", "voitko hakea netistä",
-        "voitko hakea verkosta", "pystytkö hakemaan netistä", "pystytkö hakemaan verkosta",
-        "mikä on web_search", "mikä tämä web_search", "web_search-moduuli", "web_search moduuli",
+        "toimiiko haku netista", "toimiiko haku verkosta", "toimiiko verkkohaku",
+        "toimii haku netista", "toimii haku verkosta", "sinulla toimii haku netista",
+        "onko verkkohaku kaytossa", "onko haku netista kaytossa", "voitko hakea netista",
+        "voitko hakea verkosta", "pystytko hakemaan netista", "pystytko hakemaan verkosta",
+        "mika on web_search", "mika tama web_search", "web_search-moduuli", "web_search moduuli",
         "web search status", "verkkohakun tila",
     )
     return any(phrase in text for phrase in phrases)
@@ -840,3 +927,4 @@ if __name__ == "__main__":
     query = "Pielinen kalalajit kuha hauki ahven"
     result = web_search(root, query, max_results=5)
     print(format_web_search_reply(result))
+
