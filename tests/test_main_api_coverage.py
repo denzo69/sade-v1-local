@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
@@ -215,3 +216,17 @@ def test_file_and_system_prompt_api_routes(isolated_main: Path, monkeypatch: pyt
     assert client.post("/system-prompt", json={"content": ""}, headers=headers).status_code == 400
 
     client.close()
+
+
+def test_ask_ollama_rejects_empty_provider_response(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    class EmptyProvider:
+        def generate(self, prompt: str):
+            return SimpleNamespace(text="   ")
+
+    monkeypatch.setattr(main, "provider_from_config", lambda config: EmptyProvider())
+
+    with pytest.raises(HTTPException) as exc:
+        main.ask_ollama("hello")
+
+    assert exc.value.status_code == 502
+    assert "empty response" in exc.value.detail

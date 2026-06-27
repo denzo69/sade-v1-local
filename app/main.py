@@ -711,51 +711,15 @@ def extract_memory_command(message: str) -> Optional[str]:
 def ask_ollama(prompt: str) -> str:
     config = load_config()
     try:
-        return provider_from_config(config).generate(prompt).text
+        text = provider_from_config(config).generate(prompt).text
     except ModelProviderError as e:
         raise HTTPException(status_code=503, detail=str(e))
-
-    ollama_url = config.get("ollama_url", "http://127.0.0.1:11434/api/generate")
-    ollama_model = config.get("ollama_model", "gpt-oss:20b")
-    temperature = float(config.get("temperature", 0.7))
-    num_ctx = int(config.get("num_ctx", 8192))
-
-    payload = {
-        "model": ollama_model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": temperature,
-            "num_ctx": num_ctx
-        }
-    }
-
-    data = json.dumps(payload).encode("utf-8")
-
-    request = urllib.request.Request(
-        ollama_url,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
-    try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            response_data = response.read().decode("utf-8")
-            result = json.loads(response_data)
-            return result.get("response", "").strip()
-
-    except urllib.error.URLError as e:
+    if not text.strip():
         raise HTTPException(
-            status_code=503,
-            detail=f"Ollamaan ei saada yhteyttä. Tarkista että Ollama on käynnissä. Virhe: {e}"
+            status_code=502,
+            detail="Model provider returned an empty response. Check the selected model, Ollama logs, and model availability.",
         )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ollama-kutsu epäonnistui: {e}"
-        )
+    return text
 
 
 def build_sade_prompt(user_message: str) -> str:

@@ -736,6 +736,55 @@ def is_explicit_web_search_request(message: str) -> bool:
     return any(trigger in text for trigger in triggers)
 
 
+def is_current_info_request(message: str) -> bool:
+    """Detect short natural-language requests that need fresh web data.
+
+    Keep this intentionally narrow: weather, lottery/current result, exchange
+    rate and schedule prompts should use search instead of stale model memory.
+    Ordinary chat should still stay in the normal assistant path.
+    """
+    text = " ".join((message or "").lower().split()).strip(" .!?;:")
+    if not text:
+        return False
+
+    if re.match(r"^(sää|saa|weather)\s+[a-zåäö0-9 .'-]{2,80}$", text, flags=re.I):
+        return True
+
+    current_terms = (
+        "lotto",
+        "loton",
+        "veikkaus",
+        "jokeri",
+        "eurojackpot",
+        "sää",
+        "weather",
+        "kurssi",
+        "exchange rate",
+        "tänään",
+        "today",
+        "huomenna",
+        "tomorrow",
+        "aikataulu",
+        "schedule",
+    )
+    freshness_terms = (
+        "edellinen",
+        "viimeisin",
+        "uusin",
+        "oikea numero",
+        "tulos",
+        "tulokset",
+        "nyt",
+        "current",
+        "latest",
+        "today",
+        "tänään",
+        "huomenna",
+    )
+
+    return any(term in text for term in current_terms) and any(term in text for term in freshness_terms)
+
+
 def is_web_search_status_request(message: str) -> bool:
     text = " ".join((message or "").lower().split()).strip(" .!?;:")
     phrases = (

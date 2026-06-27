@@ -751,11 +751,19 @@ async function sendChat() {
             const data = await response.json();
 
             if (response.ok) {
-                addChatLine("Assistant", data.reply);
+                const replyText = (data.reply || data.response || data.answer || data.message || "").trim();
+                if (!replyText) {
+                    addChatLine("Assistant", "No reply was returned by the server. Check model/provider status and server logs.");
+                    document.getElementById("status").innerText = "Empty reply from server.";
+                    return;
+                }
+                addChatLine("Assistant", replyText);
                 addChatActions(data.actions);
                 document.getElementById("status").innerText = "Reply ready.";
             } else {
-                document.getElementById("status").innerText = "Error: " + JSON.stringify(data);
+                const errorText = data.detail || data.error || JSON.stringify(data);
+                addChatLine("Assistant", "Request failed: " + errorText);
+                document.getElementById("status").innerText = "Error: " + errorText;
             }
 
         } catch (error) {

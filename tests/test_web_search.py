@@ -109,6 +109,18 @@ def test_page_check_request_routes_to_web_search(tmp_path: Path, monkeypatch) ->
     assert route_tool_preview(message)["tool"] == "web_search"
 
 
+def test_current_weather_request_routes_to_web_search(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("app.web_search.web_search", _fake_search)
+
+    message = "Sää Lieksa"
+    result = route_tool_request(tmp_path, message)
+
+    assert result["handled"] is True
+    assert result["tool"] == "web_search"
+    assert result["result"]["query"] == "Sää Lieksa"
+    assert route_tool_preview(message)["tool"] == "web_search"
+
+
 def test_web_search_provider_selection_prefers_google_when_configured(monkeypatch) -> None:
     monkeypatch.delenv("SADE_WEB_SEARCH_PROVIDER", raising=False)
     monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
