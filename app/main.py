@@ -2481,6 +2481,23 @@ def _handle_rag_chat_command(message: str):
     }
 
 
+def _build_web_search_chat_result(message: str, *, reason: str = "automatic_factual_search") -> Dict[str, object]:
+    from app import web_search as web_search_module
+
+    search_result = web_search_module.web_search(PROJECT_PATH, message, max_results=6)
+    return {
+        "handled": True,
+        "tool": "web_search",
+        "reason": reason,
+        "result": search_result,
+        "reply": web_search_module.format_web_search_reply(search_result),
+        "actions": ([
+            {"label": "Review sources", "message": "Review sources"},
+            {"label": "Deepen search", "message": f"web search {message} 2025 2026 report"},
+        ] if search_result.get("ok") and search_result.get("results") else []),
+    }
+
+
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
@@ -2633,18 +2650,11 @@ def chat(request: ChatRequest):
         try:
             from app import web_search as web_search_module
 
-            if web_search_module.is_current_info_request(request.message):
-                search_result = web_search_module.web_search(PROJECT_PATH, request.message, max_results=6)
-                tool_result = {
-                    "handled": True,
-                    "tool": "web_search",
-                    "result": search_result,
-                    "reply": web_search_module.format_web_search_reply(search_result),
-                    "actions": ([
-                        {"label": "Review sources", "message": "Review sources"},
-                        {"label": "Deepen search", "message": f"web search {request.message} 2025 2026 report"},
-                    ] if search_result.get("ok") and search_result.get("results") else []),
-                }
+            if (
+                web_search_module.is_current_info_request(request.message)
+                or web_search_module.is_automatic_web_search_request(request.message)
+            ):
+                tool_result = _build_web_search_chat_result(request.message)
         except Exception as error:
             tool_result = {
                 "handled": True,
@@ -2703,7 +2713,25 @@ def chat(request: ChatRequest):
         )
 
     prompt = build_sade_prompt(request.message)
-    reply = ask_ollama(prompt)
+    try:
+        reply = ask_ollama(prompt)
+    except HTTPException as error:
+        if error.status_code == 502:
+            try:
+                tool_result = _build_web_search_chat_result(request.message, reason="model_provider_fallback")
+                reply = str(tool_result.get("reply") or "").strip()
+                if reply:
+                    append_chat_log(request.message, reply)
+                    return ChatResponse(
+                        ok=True,
+                        reply=reply,
+                        model=load_config().get("ollama_model", "gpt-oss:20b"),
+                        time=datetime.now().isoformat(timespec="seconds"),
+                        actions=tool_result.get("actions") or None,
+                    )
+            except Exception:
+                pass
+        raise
     try:
         write_trace(
             PROJECT_PATH,

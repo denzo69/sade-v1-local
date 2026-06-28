@@ -127,7 +127,7 @@ def test_failed_search_never_claims_success() -> None:
 def test_status_does_not_claim_unimplemented_integrations(tmp_path: Path) -> None:
     status = web_search_status(tmp_path)
 
-    assert status["automatic_search"] is False
+    assert status["automatic_search"] is True
     assert status["rag_integration"] is False
     assert status["semantic_memory_integration"] is False
     assert status["goal_engine_integration"] is False
@@ -156,6 +156,18 @@ def test_current_weather_request_routes_to_web_search(tmp_path: Path, monkeypatc
     assert result["handled"] is True
     assert result["tool"] == "web_search"
     assert result["result"]["query"] == "Sää Lieksa"
+    assert route_tool_preview(message)["tool"] == "web_search"
+
+
+def test_factual_product_question_routes_to_web_search(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("app.web_search.web_search", _fake_search)
+
+    message = "Paljon Volvo Penta 2003T polttoaineen kulutus on?"
+    result = route_tool_request(tmp_path, message)
+
+    assert result["handled"] is True
+    assert result["tool"] == "web_search"
+    assert result["result"]["query"] == message
     assert route_tool_preview(message)["tool"] == "web_search"
 
 

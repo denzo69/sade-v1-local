@@ -661,6 +661,7 @@ def route_tool_request(project_path: Path, message: str) -> Dict[str, Any]:
         extract_web_query,
         format_web_search_reply,
         format_web_search_status_reply,
+        is_automatic_web_search_request,
         format_source_review_reply,
         is_current_info_request,
         is_explicit_web_search_request,
@@ -722,9 +723,10 @@ def route_tool_request(project_path: Path, message: str) -> Dict[str, Any]:
     ])
     explicit_web_search = explicit_web_search or is_explicit_web_search_request(original)
     current_info_search = False if explicit_web_search else is_current_info_request(original)
+    automatic_web_search = False if explicit_web_search else is_automatic_web_search_request(original)
     pending_web_search = False if explicit_web_search else consume_pending_web_search(project_path, original)
 
-    if explicit_web_search or current_info_search or pending_web_search:
+    if explicit_web_search or current_info_search or automatic_web_search or pending_web_search:
         query = extract_web_query(original) if explicit_web_search else original.strip()
         if not query:
             return {
@@ -1069,7 +1071,7 @@ def route_tool_preview(message: str) -> Dict[str, Any]:
     if not text:
         return {"would_route": False, "tool": None, "reason": "empty_message"}
 
-    from app.web_search import is_current_info_request, is_explicit_web_search_request, is_web_search_status_request, is_web_search_trial_request
+    from app.web_search import is_automatic_web_search_request, is_current_info_request, is_explicit_web_search_request, is_web_search_status_request, is_web_search_trial_request
     if is_web_search_status_request(message):
         return {"would_route": True, "tool": "web_search_status"}
     if is_web_search_trial_request(message):
@@ -1097,6 +1099,9 @@ def route_tool_preview(message: str) -> Dict[str, Any]:
         return {"would_route": True, "tool": "web_search"}
 
     if is_current_info_request(message):
+        return {"would_route": True, "tool": "web_search"}
+
+    if is_automatic_web_search_request(message):
         return {"would_route": True, "tool": "web_search"}
 
     # Goal Engine v1.1 — priorisoitu preview ennen yleistä omatilaa.

@@ -466,7 +466,7 @@ def web_search_status(project_root: Optional[Path] = None) -> Dict[str, Any]:
         "provider": choose_provider(),
         "providers": configured_providers(),
         "direct_chat_integration": True,
-        "automatic_search": False,
+        "automatic_search": True,
         "rag_integration": False,
         "semantic_memory_integration": False,
         "goal_engine_integration": False,
@@ -903,6 +903,65 @@ def is_current_info_request(message: str) -> bool:
         any(term in text for term in freshness_terms)
         or any(term in ascii_text for term in freshness_terms_ascii)
     )
+
+
+def is_automatic_web_search_request(message: str) -> bool:
+    """Detect factual questions that should use web search before model memory.
+
+    This is intentionally broader than ``is_current_info_request``. It catches
+    practical factual questions such as product specs, fuel consumption, prices,
+    model years, technical data, regulations, and "how much / what is" prompts.
+    It still avoids routing short greetings or personal/chatty messages to the
+    search engine.
+    """
+    raw = " ".join((message or "").split()).strip(" .!?;:")
+    if not raw:
+        return False
+
+    text = raw.lower()
+    ascii_text = _ascii_finnish(text)
+
+    if len(ascii_text) < 8:
+        return False
+
+    blocked_starts = (
+        "moi", "hei", "heippa", "kiitos", "ok", "okei", "joo", "kylla", "kyllä",
+        "muista ", "tallenna ", "lisaa muisti", "lisää muisti", "kirjoita tiedostoon",
+        "luo tiedosto", "appendaa", "poista ",
+    )
+    if any(ascii_text == item or ascii_text.startswith(item) for item in blocked_starts):
+        return False
+
+    question_mark = "?" in message
+    interrogatives = (
+        "mika", "mikä", "mita", "mitä", "milloin", "missä", "missa", "paljon",
+        "kuinka", "montako", "kuka", "kenen", "onko", "voiko", "saako",
+        "what", "when", "where", "how much", "how many", "who", "which",
+    )
+    factual_terms = (
+        "kulutus", "polttoaine", "fuel consumption", "hinta", "price", "maksaa",
+        "spec", "specs", "tekniset tiedot", "technical data", "moottori", "engine",
+        "malli", "model", "vuosimalli", "year", "paino", "weight", "mitta",
+        "length", "leveys", "width", "teho", "horsepower", "hp", "kw",
+        "varaosa", "part number", "ohjekirja", "manual", "laki", "law",
+        "asetus", "regulation", "uutinen", "news", "tutkimus", "research",
+        "raportti", "report", "arvostelu", "review", "vertailu", "comparison",
+    )
+
+    has_question_word = any(ascii_text.startswith(term) or f" {term} " in f" {ascii_text} " for term in interrogatives)
+    has_factual_term = any(_ascii_finnish(term) in ascii_text for term in factual_terms)
+    has_model_like_token = bool(re.search(r"\b[a-z]{2,}\s*[-]?\s*\d{2,}[a-z0-9-]*\b|\b\d{4}[a-z]?\b", ascii_text))
+
+    if is_current_info_request(message):
+        return True
+
+    if question_mark and (has_question_word or has_factual_term or has_model_like_token):
+        return True
+
+    if has_question_word and (has_factual_term or has_model_like_token):
+        return True
+
+    return False
 
 
 def is_web_search_status_request(message: str) -> bool:

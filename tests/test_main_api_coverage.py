@@ -639,3 +639,76 @@ def test_chat_tool_empty_reply_memory_and_llm_paths(isolated_main: Path, monkeyp
     assert client.post("/chat", json={"message": "   "}, headers=headers).status_code == 400
 
     client.close()
+
+
+def test_chat_factual_question_auto_routes_to_web_search(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_search(_root: Path, query: str, max_results: int = 6):
+        return {
+            "ok": True,
+            "query": query,
+            "provider": "test",
+            "results": [
+                {
+                    "rank": 1,
+                    "title": "Volvo Penta 2003T data",
+                    "url": "https://example.test/volvo-penta-2003t",
+                    "source": "example.test",
+                    "snippet": "Fuel consumption and technical data for Volvo Penta 2003T.",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("app.dev_chat_commands.try_handle_dev_command", lambda path, message: None)
+    monkeypatch.setattr("app.web_search.web_search", fake_search)
+    monkeypatch.setattr(main, "log_tool_event", lambda *a, **k: None)
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
+
+    client, headers = authenticated_client(isolated_main)
+    message = "Paljon Volvo Penta 2003T polttoaineen kulutus on?"
+    response = client.post("/chat", json={"message": message}, headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "Volvo Penta 2003T data" in body["reply"]
+    assert body["actions"]
+
+    client.close()
+
+
+def test_chat_model_provider_empty_response_falls_back_to_web_search(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_search(_root: Path, query: str, max_results: int = 6):
+        return {
+            "ok": True,
+            "query": query,
+            "provider": "test",
+            "results": [
+                {
+                    "rank": 1,
+                    "title": "Fallback source",
+                    "url": "https://example.test/fallback",
+                    "source": "example.test",
+                    "snippet": "Fallback search result.",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("app.dev_chat_commands.try_handle_dev_command", lambda path, message: None)
+    monkeypatch.setattr(main, "route_tool_request", lambda path, message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_learning_review_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_learning_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_task_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr(main, "_handle_rag_chat_command", lambda message: {"handled": False})
+    monkeypatch.setattr("app.web_search.web_search", fake_search)
+    monkeypatch.setattr(
+        main,
+        "ask_ollama",
+        lambda prompt: (_ for _ in ()).throw(HTTPException(status_code=502, detail="empty response")),
+    )
+
+    client, headers = authenticated_client(isolated_main)
+    response = client.post("/chat", json={"message": "Kerro tästä aiheesta"}, headers=headers)
+
+    assert response.status_code == 200
+    assert "Fallback source" in response.json()["reply"]
+
+    client.close()

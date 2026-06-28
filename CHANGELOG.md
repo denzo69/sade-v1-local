@@ -2,6 +2,24 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.4-automatic-factual-search] - 2026-06-28
+
+### Added
+
+- Added automatic web-search routing for broad factual questions, including product/specification questions such as fuel consumption, model data, prices, weights, dimensions, manuals, and technical details.
+- Added model-provider fallback behavior: if the local model returns an empty/502 response, chat can fall back to web search instead of showing a raw provider error to the user.
+- Added tests for Volvo Penta 2003T style factual questions through both the tool router and the full `/chat` endpoint.
+
+### Changed
+
+- Web search status now reports automatic search as enabled.
+- Chat no longer relies only on narrow weather/lottery/current-info detection before using search.
+
+### Testing
+
+- Local test status: `159 passed`.
+- Total coverage: `85%`.
+
 ## [0.1.3-coverage-lift] - 2026-06-27
 
 ### Added
