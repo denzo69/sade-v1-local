@@ -422,18 +422,18 @@ def _format_omatila_reply(report: Dict[str, Any]) -> str:
     ]
 
     lines = [
-        "# Omatila — Säde v1",
+        "# Self-State — Local AI Workspace",
         "",
-        f"Tarkistin nykyisen tilani tiedostoista: `{report.get('project_root')}`",
+        f"Checked the current documented state from: `{report.get('project_root')}`",
         "",
-        "## Mikä olen nyt",
+        "## What I am now",
         "",
-        "Olen Säde v1, paikallinen itseään mallintava AI-persoonajärjestelmä.",
-        "Tämä raportti perustuu tiedostojen tarkistukseen, ei arvaukseen.",
+        "Local AI Workspace is a local AI assistant system with documented state, memory, tools, and safety boundaries.",
+        "This report is based on file inspection, not guesswork.",
         "",
-        "## Dokumentit",
+        "## Documents",
         "",
-        f"Aktiivisia tai fallbackin kautta löytyviä dokumentteja: {len(active_docs)} / {len(documents)}",
+        f"Active or fallback-discovered documents: {len(active_docs)} / {len(documents)}",
     ]
 
     if active_docs:
@@ -443,30 +443,30 @@ def _format_omatila_reply(report: Dict[str, Any]) -> str:
             lines.append(f"- ✅ `{doc.get('id')}` — {doc.get('status')} — `{active_path}`")
 
     if missing_docs:
-        lines.extend(["", "Puuttuvat dokumentit:"])
+        lines.extend(["", "Missing documents:"])
         for doc in missing_docs:
             lines.append(f"- ⚠️ `{doc.get('id')}` — {doc.get('note')}")
 
-    lines.extend(["", "## Moduulit", ""])
+    lines.extend(["", "## Modules", ""])
 
     for module in modules:
         status = module.get("status")
         icon = "✅" if status in {"created", "implemented_candidate"} else "⚠️"
         refs = module.get("referenced_by") or []
-        ref_text = f" Viitteet: {', '.join(refs)}." if refs else ""
+        ref_text = f" References: {', '.join(refs)}." if refs else ""
         lines.append(f"- {icon} `{module.get('id')}` — {status}. {module.get('note')}{ref_text}")
 
-    lines.extend(["", "## Vahvistetut kyvyt", ""])
+    lines.extend(["", "## Verified capabilities", ""])
 
     for capability in report.get("verified_capabilities") or []:
         lines.append(f"- {capability}")
 
-    lines.extend(["", "## Rajoitukset", ""])
+    lines.extend(["", "## Limitations", ""])
 
     for limitation in report.get("limitations") or []:
         lines.append(f"- {limitation}")
 
-    lines.extend(["", "## Seuraavat askeleet", ""])
+    lines.extend(["", "## Next steps", ""])
 
     for step in report.get("next_steps") or []:
         lines.append(f"- {step}")
@@ -474,9 +474,9 @@ def _format_omatila_reply(report: Dict[str, Any]) -> str:
     if missing_modules:
         lines.extend([
             "",
-            "## Totuusraja",
+            "## Truth boundary",
             "",
-            "En väitä puuttuvia moduuleja toteutetuiksi. Jos jokin on `missing`, se on suunnitelma tai puuttuva osa, ei käytössä oleva ominaisuus.",
+            "Missing modules are not presented as implemented. If something is `missing`, it is a plan or a missing part, not an active feature.",
         ])
 
     return "\n".join(lines).strip()

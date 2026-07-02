@@ -46,6 +46,6 @@ def test_tool_router_omatila_uses_clean_persona_report() -> None:
 
     assert result["handled"] is True
     assert result["tool"] == "introspection"
-    assert "# Omatila" in result["reply"]
-    assert "Totuusraja" in result["reply"]
+    assert "# Self-State" in result["reply"]
+    assert "Truth boundary" in result["reply"]
     assert "Seuraava suositeltu turvakerros on audit_log v1" not in result["reply"]

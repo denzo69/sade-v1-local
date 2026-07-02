@@ -131,7 +131,49 @@ def _shorten(text: str, limit: int = 700) -> str:
     text = (text or "").strip()
     if len(text) <= limit:
         return text
-    return text[:limit].rstrip() + "\n...[lyhennetty]..."
+    return text[:limit].rstrip() + "\n...[truncated]..."
+
+
+def _public_label(text: Any) -> str:
+    """Return a portfolio-facing label without changing internal IDs or files."""
+    value = str(text or "")
+    replacements = {
+        "Säde v1 Project Inventory": "Project Inventory",
+        "Säde v1 Document Registry": "Document Registry",
+        "Säde Memory Policy": "Memory Policy",
+        "Säde RAG Source Policy": "RAG Source Policy",
+        "Säde Tool Permission Policy": "Tool Permission Policy",
+        "Säde Guardrails": "Guardrails",
+        "Säde Operating Manual": "Operating Manual",
+        "Säde Self Model Policy": "Self Model Policy",
+        "Säde Identity Core": "Identity Core",
+        "Säde Autobiographical Memory": "Autobiographical Memory",
+        "Säde Persona State": "Persona State",
+        "Säde Development Roadmap": "Development Roadmap",
+        "Säde Code Rewrite Protocol": "Code Rewrite Protocol",
+        "Säde Audit Log Policy": "Audit Log Policy",
+        "Säde Goal Engine Policy": "Goal Engine Policy",
+        "Säde Web Search Policy": "Web Search Policy",
+        "Säde Finnish Language Pack": "Finnish Language Pack",
+        "Säde v1": "Local AI Workspace",
+        "Säde": "Local AI Workspace",
+    }
+    for old, new in replacements.items():
+        value = value.replace(old, new)
+    return value
+
+
+def _public_sentence(text: Any) -> str:
+    value = _public_label(text)
+    translations = {
+        "Tämä raportti on lukutoiminto eikä muuta tiedostoja.": "This report is read-only and does not modify files.",
+        "implemented_candidate ei tarkoita testattua ominaisuutta.": "`implemented_candidate` does not mean the feature has been tested.",
+        "tested_candidate tarkoittaa testikytkentää, ei tässä raportissa ajettua pytest-tulosta.": "`tested_candidate` means a test hook exists; it is not a pytest result from this report.",
+        "Suunniteltuja moduuleja ei saa väittää käytössä oleviksi.": "Planned modules must not be presented as active features.",
+        "Rakentaa Local AI Workspace:stä muistava, omaääninen ja turvallinen AI-persoonajärjestelmä.": "Build Local AI Workspace into a memory-aware, distinctive, and safe local AI assistant system.",
+        "Päivitä introspection-raportti ja personadokumentit, jos nykytila näyttää ristiriitaiselta.": "Update the introspection report and persona documents if the current state appears inconsistent.",
+    }
+    return translations.get(value, value)
 
 
 def load_persona_context(project_root: Optional[Path] = None) -> Dict[str, Any]:
@@ -210,12 +252,16 @@ def build_persona_frame(
         "autobiographical_memory": context["autobiographical_memory"]["found"],
     }
 
+    display_name = persona.get("display_name") or persona.get("name") or "Local AI Workspace"
+    if str(display_name).strip().lower() in {"säde", "sade", "säde v1", "sade v1"}:
+        display_name = "Local AI Workspace"
+
     return {
         "project_root": context["project_root"],
-        "display_name": persona.get("display_name") or persona.get("name") or "Säde",
+        "display_name": display_name,
         "state": persona.get("state", "unknown"),
         "mode": persona.get("mode", "unknown"),
-        "current_focus": persona.get("current_focus", ""),
+        "current_focus": _public_sentence(persona.get("current_focus", "")),
         "identity_summary": persona.get("identity_summary", ""),
         "voice_traits": voice_traits,
         "truth_rules": persona.get("truth_rules", {}) or {},
@@ -258,10 +304,10 @@ def _items_to_lines(items: Any, *, name_keys: Iterable[str], status_key: str = "
         for key, value in items.items():
             if isinstance(value, dict):
                 status = value.get(status_key, "")
-                title = value.get("title") or value.get("name") or key
+                title = _public_label(value.get("title") or value.get("name") or key)
             else:
                 status = str(value)
-                title = key
+                title = _public_label(key)
             lines.append(f"- {_status_emoji(status)} **{title}** — `{status or 'unknown'}`")
         return lines
 
@@ -273,7 +319,7 @@ def _items_to_lines(items: Any, *, name_keys: Iterable[str], status_key: str = "
                     if item.get(key):
                         title = item.get(key)
                         break
-                title = title or item.get("id") or item.get("path") or "nimetön"
+                title = _public_label(title or item.get("id") or item.get("path") or "unnamed")
                 status = item.get(status_key, item.get("state", "unknown"))
                 lines.append(f"- {_status_emoji(str(status))} **{title}** — `{status}`")
             else:
@@ -287,9 +333,9 @@ def _persona_document_lines(persona_frame: Dict[str, Any]) -> List[str]:
     # Lisää persona-dokumentit omatilan dokumenttilistaan, jos persona layer löytää ne.
     found = persona_frame.get("found_files", {}) or {}
     labels = {
-        "sade_identity_core": "Säde Identity Core",
-        "autobiographical_memory": "Säde Autobiographical Memory",
-        "persona_state": "Säde Persona State",
+        "sade_identity_core": "Identity Core",
+        "autobiographical_memory": "Autobiographical Memory",
+        "persona_state": "Persona State",
     }
 
     lines: List[str] = []
@@ -350,7 +396,7 @@ def render_introspection_reply(report: Dict[str, Any], persona_frame: Dict[str, 
     Muotoilee introspection.py:n rakenteisen raportin Säteen äänellä.
     Ei lisää uusia kykyväitteitä eikä muuta raportin faktoja.
     """
-    display_name = persona_frame.get("display_name", "Säde")
+    display_name = persona_frame.get("display_name", "Local AI Workspace")
     state = persona_frame.get("state", "unknown")
     mode = persona_frame.get("mode", "unknown")
     focus = persona_frame.get("current_focus", "")
@@ -360,30 +406,30 @@ def render_introspection_reply(report: Dict[str, Any], persona_frame: Dict[str, 
     project_root = report.get("project_root") or persona_frame.get("project_root", "")
 
     lines: List[str] = []
-    lines.append(f"# Omatila — {display_name} v1")
+    lines.append(f"# Self-State — {display_name}")
     lines.append("")
-    lines.append("Tarkistin nykyisen tilani dokumentoiduista tiedoista ja teknisestä raportista. Tässä tämänhetkinen, varovaisesti totuudessa pysyvä tilannekuva. 🙂")
+    lines.append("I checked the documented state and the technical status report. This is the current careful, truth-bounded snapshot. 🙂")
     lines.append("")
-    lines.append("## Mikä olen nyt")
+    lines.append("## What I am now")
     lines.append("")
-    lines.append(f"- **Tila:** `{state}`")
-    lines.append(f"- **Mood / toimintatila:** `{mode}`")
+    lines.append(f"- **State:** `{state}`")
+    lines.append(f"- **Mode:** `{mode}`")
     if focus:
-        lines.append(f"- **Nykyinen fokus:** {focus}")
+        lines.append(f"- **Current focus:** {focus}")
     if project_root:
-        lines.append(f"- **Projektijuuri:** `{project_root}`")
-    lines.append(f"- **Raportin aika:** `{generated_at}`")
+        lines.append(f"- **Project root:** `{project_root}`")
+    lines.append(f"- **Report time:** `{generated_at}`")
     lines.append("")
 
     documents = report.get("documents") or report.get("document_status") or []
     modules = report.get("modules") or report.get("module_status") or []
 
-    lines.append("## Dokumentit")
+    lines.append("## Documents")
     doc_lines = _items_to_lines(documents, name_keys=("title", "id", "name", "path"))
     if doc_lines:
         lines.extend(doc_lines)
     else:
-        lines.append("- Dokumenttilistaa ei löytynyt introspection-raportista.")
+        lines.append("- No document list was found in the introspection report.")
 
     # Persona Layer v1.1: täydennä omatilan kannalta olennaiset persona-dokumentit.
     for extra_line in _persona_document_lines(persona_frame):
@@ -391,12 +437,12 @@ def render_introspection_reply(report: Dict[str, Any], persona_frame: Dict[str, 
             lines.append(extra_line)
     lines.append("")
 
-    lines.append("## Moduulit")
+    lines.append("## Modules")
     module_lines = _items_to_lines(modules, name_keys=("name", "id", "path", "title"))
     if module_lines:
         lines.extend(module_lines)
     else:
-        lines.append("- Moduulilistaa ei löytynyt introspection-raportista.")
+        lines.append("- No module list was found in the introspection report.")
 
     # Lisää persona_layer vain, jos introspection ei jo raportoinut sitä.
     reported_module_ids = {
@@ -410,26 +456,26 @@ def render_introspection_reply(report: Dict[str, Any], persona_frame: Dict[str, 
     limitations = report.get("limitations") or []
     next_steps = _clean_next_steps(report.get("next_steps") or report.get("recommended_next_steps") or [])
 
-    lines.append("## Vahvistetut kyvyt")
+    lines.append("## Verified capabilities")
     if capabilities:
         for item in capabilities:
-            lines.append(f"- {item}")
+            lines.append(f"- {_public_sentence(item)}")
     else:
-        lines.append("- Ei erillistä vahvistettujen kykyjen listaa raportissa.")
+        lines.append("- No separate verified-capabilities list was included in the report.")
     lines.append("")
 
-    lines.append("## Rajat ja keskeneräisyydet")
+    lines.append("## Boundaries and unfinished areas")
     if limitations:
         for item in limitations:
-            lines.append(f"- {item}")
+            lines.append(f"- {_public_sentence(item)}")
     else:
-        lines.append("- Ei erillistä rajoituslistaa raportissa.")
+        lines.append("- No separate limitations list was included in the report.")
     lines.append("")
 
     if latest_memory.get("date") or latest_memory.get("title"):
-        lines.append("## Viimeisin elämäkerrallinen muistijälki")
-        title = latest_memory.get("title") or "otsikko puuttuu"
-        date = latest_memory.get("date") or "päiväys puuttuu"
+        lines.append("## Most recent autobiographical memory entry")
+        title = _public_label(latest_memory.get("title") or "missing title")
+        date = latest_memory.get("date") or "missing date"
         lines.append(f"- **{date} — {title}**")
         excerpt = latest_memory.get("excerpt")
         if excerpt:
@@ -437,16 +483,16 @@ def render_introspection_reply(report: Dict[str, Any], persona_frame: Dict[str, 
             lines.append(excerpt)
         lines.append("")
 
-    lines.append("## Seuraavat luonnolliset askeleet")
+    lines.append("## Natural next steps")
     if next_steps:
         for item in next_steps:
-            lines.append(f"- {item}")
+            lines.append(f"- {_public_sentence(item)}")
     else:
-        lines.append("- Päivitä introspection-raportti ja personadokumentit, jos nykytila näyttää ristiriitaiselta.")
+        lines.append("- Update the introspection report and persona documents if the current state appears inconsistent.")
     lines.append("")
 
-    lines.append("## Totuusraja")
-    lines.append("En väitä ominaisuutta valmiiksi vain siksi, että se on suunniteltu. Jos jokin on dokumentoitu, mutta ei testattu, sen pitää näkyä keskeneräisenä.")
+    lines.append("## Truth boundary")
+    lines.append("I do not present a feature as complete just because it is planned. If something is documented but not tested, it must remain visible as unfinished.")
     lines.append("")
 
     return "\n".join(lines).strip()

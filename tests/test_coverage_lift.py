@@ -398,7 +398,7 @@ def test_persona_layer_loads_context_and_renders_status(tmp_path: Path) -> None:
 def test_persona_layer_fallbacks_and_line_helpers(tmp_path: Path) -> None:
     assert persona_layer.parse_latest_memory_entry("")["date"] is None
     assert persona_layer.parse_latest_memory_entry("no dates here")["content"] == ""
-    assert persona_layer._shorten("x" * 20, limit=5).endswith("...[lyhennetty]...")
+    assert persona_layer._shorten("x" * 20, limit=5).endswith("...[truncated]...")
     assert persona_layer._status_emoji("failed")
     assert persona_layer._items_to_lines({"a": {"title": "A", "status": "ok"}}, name_keys=("title",))
     assert persona_layer._items_to_lines([{"name": "B", "state": "active"}, "plain"], name_keys=("name",))
