@@ -2,6 +2,24 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.6-project-health-dashboard] - 2026-07-02
+
+### Added
+
+- Added a sanitized `/health/summary` endpoint for portfolio-friendly project health reporting.
+- Added a Project Health Dashboard in Settings with cards for server, version, model, memory, RAG, web search, audit log, tests, release readiness, storage, and privacy.
+- Added an Advanced raw system status section so detailed diagnostics stay separate from the normal dashboard.
+
+### Changed
+
+- Normal health dashboard output hides local filesystem paths and reports configured storage paths as status fields instead.
+- Health summary uses lightweight checks and avoids loading heavy semantic-memory dependencies.
+
+### Testing
+
+- Local test status: `161 passed`.
+- Total coverage: `85%`.
+
 ## [0.1.5-recipe-search-routing] - 2026-06-28
 
 ### Added

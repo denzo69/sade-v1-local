@@ -5,10 +5,11 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 import json
 import hmac
 import os
+import re
 import subprocess
 import urllib.request
 import urllib.error
@@ -149,6 +150,7 @@ REPO_ROOT = PROJECT_PATH.parent
 BASE_PATH = PROJECT_PATH
 CONFIG_PATH = PROJECT_PATH / "config.json"
 VERSION_PATH = REPO_ROOT / "VERSION"
+README_PATH = REPO_ROOT / "README.md"
 
 MEMORY_PATH = PROJECT_PATH / "memory"
 SADE_MEMORY_PATH = MEMORY_PATH / "sade_memory.md"
@@ -563,6 +565,169 @@ def build_info() -> Dict[str, str]:
         "version": get_version(),
         "build": get_git_commit(),
         "backend_started": SERVER_STARTED_AT,
+    }
+
+
+def _component_state(*, ok: bool, status: str = "configured", detail: str = "") -> Dict[str, Any]:
+    return {
+        "ok": bool(ok),
+        "status": status,
+        "detail": detail,
+    }
+
+
+def _configured_path_state(path: Path) -> Dict[str, Any]:
+    return {
+        "configured": True,
+        "exists": path.exists(),
+        "kind": "directory" if path.exists() and path.is_dir() else "file" if path.exists() and path.is_file() else "unknown",
+    }
+
+
+def _latest_known_quality_status() -> Dict[str, Any]:
+    text = ""
+    try:
+        text = README_PATH.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        text = ""
+
+    tests_match = re.search(r"(?P<count>\d+)\s+passed\s+locally", text, flags=re.IGNORECASE)
+    coverage_match = re.search(r"coverage:\s*(?P<coverage>\d+)%", text, flags=re.IGNORECASE)
+    actions_passing = "GitHub Actions: passing" in text
+
+    return {
+        "tests": f"{tests_match.group('count')} passed locally" if tests_match else "unknown",
+        "coverage": f"{coverage_match.group('coverage')}%" if coverage_match else "unknown",
+        "github_actions": "passing" if actions_passing else "unknown",
+        "source": "README.md",
+    }
+
+
+def _release_readiness_status() -> Dict[str, Any]:
+    required = [
+        "README.md",
+        "QUICKSTART.md",
+        "SECURITY.md",
+        "CONTRIBUTING.md",
+        "LICENSE",
+        "VERSION",
+        ".github/workflows/tests.yml",
+        "scripts/release_readiness.py",
+    ]
+    missing = [item for item in required if not (REPO_ROOT / item).exists()]
+    return {
+        "ok": not missing,
+        "status": "OK" if not missing else "attention",
+        "missing": missing,
+    }
+
+
+def build_health_summary() -> Dict[str, Any]:
+    ensure_paths()
+    config = load_config()
+    info = build_info()
+    quality = _latest_known_quality_status()
+    release = _release_readiness_status()
+
+    try:
+        audit = audit_status(PROJECT_PATH)
+    except Exception as error:
+        audit = {"valid": False, "error": str(error)}
+
+    try:
+        web = get_web_search_status(PROJECT_PATH)
+    except Exception as error:
+        web = {"ok": False, "enabled": False, "error": str(error)}
+
+    rag_engine_path = PROJECT_PATH / "rag_engine.py"
+    semantic_vector_path = PROJECT_PATH / "memory" / "vector_db"
+    rag_ok = rag_engine_path.exists() and SADE_MEMORY_PATH.exists()
+
+    backup_path = Path(config.get("backup_path", "D:/Sade_Backups"))
+    export_path = Path(config.get("export_path", "D:/Sade_Exports"))
+    model_store = os.environ.get("OLLAMA_MODELS", "")
+    known_external_model_store = Path("D:/Ollama/models")
+    model_store_configured = bool(model_store) or known_external_model_store.exists()
+    model_store_exists = Path(model_store).exists() if model_store else known_external_model_store.exists()
+    disk_warnings: List[str] = []
+
+    try:
+        usage = shutil.disk_usage(str(REPO_ROOT.anchor or REPO_ROOT))
+        free_gb = round(usage.free / (1024 ** 3), 1)
+        if free_gb < 10:
+            disk_warnings.append("System drive has less than 10 GB free.")
+    except Exception:
+        free_gb = None
+
+    return {
+        "ok": True,
+        "mode": "sanitized_health_summary",
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "server": _component_state(ok=True, status="running", detail="FastAPI backend is responding."),
+        "version": {
+            "version": info["version"],
+            "build": info["build"],
+            "backend_started": info["backend_started"],
+        },
+        "model": {
+            "ok": True,
+            "provider": str(config.get("model_provider", "ollama")),
+            "model": config.get("ollama_model", "gpt-oss:20b"),
+            "num_ctx": config.get("num_ctx", 8192),
+        },
+        "memory": {
+            "configured": True,
+            "assistant_memory": _configured_path_state(SADE_MEMORY_PATH),
+            "chat_log": _configured_path_state(CHAT_LOG_PATH),
+            "semantic_memory": {
+                "ok": semantic_vector_path.exists(),
+                "enabled": semantic_vector_path.exists(),
+                "count": None,
+            },
+        },
+        "rag": {
+            "ok": rag_ok,
+            "version": "configured" if rag_ok else "attention",
+            "default_n_results": config.get("semantic_search_results", 5),
+        },
+        "web_search": {
+            "ok": bool(web.get("ok")),
+            "enabled": bool(web.get("enabled")),
+            "provider": web.get("provider", "unknown"),
+            "automatic_search": bool(web.get("automatic_search")),
+            "latest_success": {
+                "time": (web.get("latest_success") or {}).get("time"),
+                "query": (web.get("latest_success") or {}).get("query"),
+                "result_count": (web.get("latest_success") or {}).get("result_count"),
+            } if web.get("latest_success") else None,
+        },
+        "audit_log": {
+            "ok": bool(audit.get("valid", audit.get("ok", False))),
+            "valid": bool(audit.get("valid", False)),
+            "count": audit.get("count"),
+            "last_event_at": audit.get("last_event_at"),
+        },
+        "quality": {
+            "tests": quality["tests"],
+            "coverage": quality["coverage"],
+            "github_actions": quality["github_actions"],
+            "release_readiness": release["status"],
+        },
+        "storage": {
+            "backup_path": _configured_path_state(backup_path),
+            "export_path": _configured_path_state(export_path),
+            "model_store": {
+                "configured": model_store_configured,
+                "exists": model_store_exists,
+                "location": "configured" if model_store_configured else "default",
+            },
+            "system_drive_free_gb": free_gb,
+            "warnings": disk_warnings,
+        },
+        "privacy": {
+            "local_paths_hidden": True,
+            "raw_debug_available_separately": True,
+        },
     }
 
 
@@ -1168,6 +1333,11 @@ def health():
         "backend_started": info["backend_started"],
         "build_info": info,
     }
+
+
+@app.get("/health/summary")
+def health_summary():
+    return build_health_summary()
 
 @app.get("/system/status")
 def system_status():

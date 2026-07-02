@@ -1,6 +1,6 @@
 # Local AI Workspace
 
-[![Tests](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/denzo69/sade-v1-local/actions/workflows/tests.yml)
+[![Tests](https://github.com/denzo69/local-ai-workspace/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/denzo69/local-ai-workspace/actions/workflows/tests.yml)
 
 Local AI Workspace is a local-first AI assistant project demonstrating modern AI engineering practices: FastAPI, local LLM integration, memory, retrieval, testing, security, and maintainable architecture.
 
@@ -13,6 +13,7 @@ It is designed as a portfolio-grade AI engineering project: it demonstrates not 
 - Separating user-facing features from advanced developer tools.
 - Implementing authentication, CSRF protection, audit logging, and backup workflows.
 - Adding AI evals, prompt-injection checks, tool risk policies, and release readiness checks.
+- Presenting operational health through a sanitized dashboard that hides local paths from normal use.
 - Writing a portfolio-friendly open-source project surface: README, QUICKSTART, SECURITY, CONTRIBUTING, CI, issue templates, and changelog.
 
 ## Engineering skills demonstrated
@@ -34,6 +35,7 @@ Local AI Workspace demonstrates practical AI engineering rather than only prompt
 - **RAG and source quality checks** for safer retrieval-assisted answers.
 - **Prompt injection detection** and tool risk classification.
 - **Audit log and debug trace** for safety and observability.
+- **Project Health Dashboard** with sanitized server, version, model, RAG, web search, audit, test, release, storage, and privacy status.
 - **Authentication** with local users, CSRF protection, and session cookies.
 - **Static and live AI eval entrypoints**.
 - **Backup/restore workflow** for local data.

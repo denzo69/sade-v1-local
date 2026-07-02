@@ -144,6 +144,11 @@ def test_status_and_safe_api_routes_with_auth(isolated_main: Path, monkeypatch: 
     client, headers = authenticated_client(isolated_main)
 
     assert client.get("/health").json()["ok"] is True
+    health_summary = client.get("/health/summary").json()
+    assert health_summary["mode"] == "sanitized_health_summary"
+    assert health_summary["privacy"]["local_paths_hidden"] is True
+    assert "path" not in health_summary["storage"]["backup_path"]
+    assert "C:\\Sade" not in str(health_summary)
     assert client.get("/model/status").json()["provider"] == "test"
     assert client.get("/semantic/status").json()["enabled"] is False
     assert client.get("/language/status").json()["active"] == "fi"

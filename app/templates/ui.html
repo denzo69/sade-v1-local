@@ -145,6 +145,14 @@
         }
         .card h3 { margin: 0 0 16px; color: #fde68a; }
         .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .health-dashboard { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+        .health-card { background: #0b1221; border: 1px solid var(--border); border-radius: 13px; padding: 14px; min-height: 96px; }
+        .health-card h4 { margin: 0 0 8px; color: var(--text); font-size: 14px; }
+        .health-value { color: #e5e7eb; font-weight: 800; font-size: 18px; line-height: 1.25; }
+        .health-detail { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.35; }
+        .health-ok { border-color: rgba(34,197,94,.45); }
+        .health-warn { border-color: rgba(251,191,36,.55); }
+        .health-bad { border-color: rgba(248,113,113,.55); }
         .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
         details.card summary {
             cursor: pointer;
@@ -254,6 +262,7 @@
             .panel-heading p { font-size: 13px; line-height: 1.35; }
             .card { padding: 17px; border-radius: 13px; }
             .card-grid { grid-template-columns: 1fr; gap: 0; }
+            .health-dashboard { grid-template-columns: 1fr; }
             .chat-layout { display: block; min-height: 0; }
             .chat-box {
                 height: clamp(250px, 44dvh, 430px);
@@ -377,12 +386,19 @@
                 <section class="tab-panel" id="panel-settings">
                     <div class="panel-heading"><h2>Settings</h2><p>Model, system status, backups, and less frequent maintenance actions.</p></div>
                     <div class="card">
-                        <h3>System status</h3>
+                        <h3>Project health dashboard</h3>
+                        <p class="small">Clean operational summary for demos and daily use. Local filesystem paths are hidden here.</p>
                         <div class="actions">
                             <button onclick="checkOllamaStatus()">Check Ollama</button>
-                            <button class="secondary" onclick="loadSystemStatus()">Refresh system status</button>
+                            <button class="secondary" onclick="loadSystemStatus()">Refresh dashboard</button>
                         </div>
-                        <pre id="systemStatus">System status loads on request.</pre>
+                        <div id="systemStatus" class="health-dashboard">Project health loads on request.</div>
+                        <details>
+                            <summary>Advanced: raw system status</summary>
+                            <p class="small">Raw diagnostics can contain local machine details. Use only for debugging.</p>
+                            <button class="secondary" onclick="loadRawSystemStatus()">Show raw status</button>
+                            <pre id="rawSystemStatus">Raw system status loads on request.</pre>
+                        </details>
                     </div>
                     <div class="card">
                         <h3>Model settings</h3>
@@ -1075,14 +1091,14 @@ async function loadSystemStatus() {
     const box = document.getElementById("systemStatus");
 
     if (!box) {
-        alert("systemStatus-elementtiä ei löydy.");
+        alert("systemStatus element is missing.");
         return;
     }
 
-    box.innerText = "Ladataan järjestelmän tilaa...";
+    box.innerText = "Loading project health...";
 
     try {
-        const url = "/system/status?ts=" + Date.now();
+        const url = "/health/summary?ts=" + Date.now();
 
         const response = await fetch(url, {
             method: "GET",
@@ -1112,53 +1128,135 @@ async function loadSystemStatus() {
         }
 
         if (!data.ok) {
-            box.innerText =
-                "System status returned an error:\n" +
-                JSON.stringify(data, null, 2);
+            box.innerText = "Project health returned an error.";
             return;
         }
 
-        let output = "";
-
-        output += "Server: " + data.server + " ✅\n";
-        output += "Time: " + data.time + "\n\n";
-
-        output += "Model: " + data.model + "\n";
-        output += "Context / num_ctx: " + data.num_ctx + "\n\n";
-
-        output += "Project path: " + (data.project.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.project.path + "\n\n";
-
-        output += "Memory path: " + (data.memory.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.memory.path + "\n\n";
-
-        output += "Assistant memory: " + (data.sade_memory.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.sade_memory.path + "\n";
-        output += "Size: " + data.sade_memory.size_bytes + " bytes\n\n";
-
-        output += "Chat log: " + (data.chat_log.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.chat_log.path + "\n";
-        output += "Size: " + data.chat_log.size_bytes + " bytes\n\n";
-
-        output += "System prompt: " + (data.system_prompt.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.system_prompt.path + "\n";
-        output += "Size: " + data.system_prompt.size_bytes + " bytes\n\n";
-
-        output += "Config: " + (data.config.exists ? "OK ✅" : "MISSING ❌") + "\n";
-        output += data.config.path + "\n\n";
-
-        output += "Backup path: " + (data.backup_path.exists ? "OK ✅" : "NOT CREATED / MISSING ⚠️") + "\n";
-        output += data.backup_path.path + "\n\n";
-
-        output += "Export path: " + (data.export_path.exists ? "OK ✅" : "NOT CREATED / MISSING ⚠️") + "\n";
-        output += data.export_path.path + "\n";
-
-        box.innerText = output;
+        renderHealthDashboard(box, data);
 
     } catch (error) {
         box.innerText =
-            "Connection error while loading system status:\n" +
+            "Connection error while loading project health:\n" +
             error;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function healthClass(ok) {
+    return ok ? "health-ok" : "health-warn";
+}
+
+function healthCard(title, value, detail, ok = true) {
+    return `
+        <div class="health-card ${healthClass(ok)}">
+            <h4>${escapeHtml(title)}</h4>
+            <div class="health-value">${escapeHtml(value)}</div>
+            <div class="health-detail">${escapeHtml(detail || "")}</div>
+        </div>
+    `;
+}
+
+function yesNo(value) {
+    return value ? "OK" : "Needs attention";
+}
+
+function renderHealthDashboard(box, data) {
+    const cards = [];
+    const storageWarnings = data.storage?.warnings || [];
+    const latestSearch = data.web_search?.latest_success;
+
+    cards.push(healthCard(
+        "Server",
+        data.server?.status || "unknown",
+        "Backend started: " + (data.version?.backend_started || "unknown"),
+        data.server?.ok
+    ));
+    cards.push(healthCard(
+        "Version",
+        "v" + (data.version?.version || "unknown"),
+        "Build: " + (data.version?.build || "unknown"),
+        true
+    ));
+    cards.push(healthCard(
+        "Model",
+        data.model?.model || "unknown",
+        "Provider: " + (data.model?.provider || "unknown") + " / context: " + (data.model?.num_ctx || "unknown"),
+        data.model?.ok
+    ));
+    cards.push(healthCard(
+        "Memory",
+        yesNo(data.memory?.assistant_memory?.exists),
+        "Assistant memory and chat log are configured; semantic entries: " + (data.memory?.semantic_memory?.count ?? "unknown"),
+        Boolean(data.memory?.assistant_memory?.exists)
+    ));
+    cards.push(healthCard(
+        "RAG",
+        yesNo(data.rag?.ok),
+        "Version: " + (data.rag?.version || "unknown"),
+        data.rag?.ok
+    ));
+    cards.push(healthCard(
+        "Web search",
+        data.web_search?.enabled ? "enabled" : "attention",
+        "Provider: " + (data.web_search?.provider || "unknown") + (latestSearch ? " / latest: " + latestSearch.result_count + " results" : ""),
+        data.web_search?.ok && data.web_search?.enabled
+    ));
+    cards.push(healthCard(
+        "Audit log",
+        data.audit_log?.valid ? "valid" : "attention",
+        "Events: " + (data.audit_log?.count ?? "unknown"),
+        data.audit_log?.valid
+    ));
+    cards.push(healthCard(
+        "Tests & coverage",
+        data.quality?.tests || "unknown",
+        "Coverage: " + (data.quality?.coverage || "unknown") + " / GitHub Actions: " + (data.quality?.github_actions || "unknown"),
+        (data.quality?.tests || "").includes("passed")
+    ));
+    cards.push(healthCard(
+        "Release readiness",
+        data.quality?.release_readiness || "unknown",
+        "Portfolio release checklist status",
+        data.quality?.release_readiness === "OK"
+    ));
+    cards.push(healthCard(
+        "Storage",
+        storageWarnings.length ? "warning" : "OK",
+        "Model store: " + (data.storage?.model_store?.location || "unknown") + " / system drive free: " + (data.storage?.system_drive_free_gb ?? "unknown") + " GB",
+        storageWarnings.length === 0
+    ));
+    cards.push(healthCard(
+        "Privacy",
+        data.privacy?.local_paths_hidden ? "paths hidden" : "attention",
+        "Raw diagnostics are separate from normal dashboard view.",
+        data.privacy?.local_paths_hidden
+    ));
+
+    box.innerHTML = cards.join("");
+}
+
+async function loadRawSystemStatus() {
+    const box = document.getElementById("rawSystemStatus");
+    if (!box) return;
+    box.innerText = "Loading raw system status...";
+    try {
+        const response = await fetch("/system/status?ts=" + Date.now(), { method: "GET", cache: "no-store" });
+        const rawText = await response.text();
+        try {
+            box.innerText = JSON.stringify(JSON.parse(rawText), null, 2);
+        } catch {
+            box.innerText = rawText;
+        }
+    } catch (error) {
+        box.innerText = "Connection error while loading raw system status: " + error;
     }
 }
 async function createExport() {

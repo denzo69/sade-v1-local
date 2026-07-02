@@ -36,6 +36,7 @@ def test_ui_and_core_routes_are_registered() -> None:
     assert "/backup/archive" in paths
     assert "/backup/restore" in paths
     assert "/model/status" in paths
+    assert "/health/summary" in paths
 
 
 def test_ui_uses_simplified_user_navigation() -> None:
@@ -85,6 +86,9 @@ def test_ui_has_mobile_viewport_and_compact_chat_layout() -> None:
     assert "runLiveEvals()" in html
     assert "System prompt" in html
     assert "Language pack technical status" in html
+    assert "Project health dashboard" in html
+    assert 'id="systemStatus" class="health-dashboard"' in html
+    assert "loadRawSystemStatus()" in html
 
 
 def test_ui_defaults_to_english_but_keeps_finnish_translation_pack() -> None:
