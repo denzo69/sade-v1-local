@@ -2,6 +2,17 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.7-coverage-hardening] - 2026-07-02
+
+### Added
+
+- Added targeted tests for self-state fallback reporting, memory-cleaner safety paths, codebase-map edge cases, auth validation, session expiry, rate limiting, CLI flows, and health-summary error branches.
+
+### Testing
+
+- Local test status: `171 passed`.
+- Total coverage: `87%`.
+
 ## [0.1.6-project-health-dashboard] - 2026-07-02
 
 ### Added

@@ -85,6 +85,43 @@ def test_config_helpers_validate_and_persist(isolated_main: Path, monkeypatch: p
         main.save_config_updates(main.ConfigUpdateRequest(ui_language="sv"))
 
 
+def test_health_summary_error_branches_and_context_helpers(isolated_main: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(main, "README_PATH", isolated_main.parent / "missing_README.md")
+    monkeypatch.setattr(main, "REPO_ROOT", isolated_main.parent / "missing_repo")
+    monkeypatch.setattr(main, "audit_status", lambda path: (_ for _ in ()).throw(RuntimeError("audit down")))
+    monkeypatch.setattr(main, "get_web_search_status", lambda path: (_ for _ in ()).throw(RuntimeError("web down")))
+
+    class TinyDisk:
+        free = 5 * 1024 ** 3
+
+    monkeypatch.setattr(main.shutil, "disk_usage", lambda path: TinyDisk())
+
+    summary = main.build_health_summary()
+
+    assert summary["quality"]["tests"] == "unknown"
+    assert summary["quality"]["release_readiness"] == "attention"
+    assert summary["audit_log"]["valid"] is False
+    assert summary["web_search"]["enabled"] is False
+    assert summary["storage"]["warnings"]
+    assert "path" not in summary["storage"]["backup_path"]
+
+    main.SADE_MEMORY_PATH.unlink()
+    main.CHAT_LOG_PATH.unlink()
+    monkeypatch.setattr(main, "ensure_paths", lambda: None)
+    assert main.get_memory_context(100) == ""
+    assert main.get_chat_context(100) == ""
+
+    main.SADE_MEMORY_PATH.write_text("abcdef", encoding="utf-8")
+    main.CHAT_LOG_PATH.write_text("123456", encoding="utf-8")
+    assert main.get_memory_context(3) == "def"
+    assert main.get_chat_context(2) == "56"
+
+    monkeypatch.setattr(main, "search_semantic_memory", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("semantic down")))
+    monkeypatch.setattr(main, "build_rag_context", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("rag down")))
+    assert main.get_semantic_context("query") == ""
+    assert "RAG-kontekstia ei voitu rakentaa" in main.get_rag_context("query")
+
+
 def test_memory_prompt_context_and_export_helpers(isolated_main: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(main, "add_text_to_semantic_memory", lambda *a, **k: {"ok": True, "indexed": True})
 

@@ -217,3 +217,53 @@ def test_codebase_map_read_errors_and_safe_mapping(tmp_path: Path) -> None:
     assert item_from_string["file"] == "file.py"
     assert item_from_dict["file"] == "file.py"
     assert invalid["ok"] is False
+
+
+def test_codebase_map_skip_and_large_file_helpers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    hidden = app_dir / ".cache" / "x.py"
+    hidden.parent.mkdir()
+    hidden.write_text("print('skip')", encoding="utf-8")
+    backup = app_dir / "main_backup_2026.py"
+    backup.write_text("print('backup')", encoding="utf-8")
+    pyc = app_dir / "module.pyc"
+    pyc.write_text("compiled", encoding="utf-8")
+    memory_file = app_dir / "memory" / "chat_log.md"
+    memory_file.parent.mkdir()
+    memory_file.write_text("private chat", encoding="utf-8")
+    outside = tmp_path / "outside.py"
+    outside.write_text("print('outside')", encoding="utf-8")
+
+    monkeypatch.setattr(codebase_map, "MAX_READ_CHARS", 10)
+    large = app_dir / "large.txt"
+    large.write_text("x" * 50, encoding="utf-8")
+
+    assert codebase_map._should_skip(hidden, app_dir) is True
+    assert codebase_map._should_skip(backup, app_dir) is True
+    assert codebase_map._should_skip(pyc, app_dir) is True
+    assert codebase_map._should_skip(memory_file, app_dir) is True
+    assert codebase_map._should_skip(outside, app_dir) is True
+    assert codebase_map._read_text(large) == "x" * 10
+
+
+def test_codebase_map_build_limits_and_error_items(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    (app_dir / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    (app_dir / "b.py").write_text("def b():\n    return 2\n", encoding="utf-8")
+
+    original_analyze = codebase_map.analyze_file
+    def flaky_analyze(project_path: Path, path: Path, include_snippet: bool = False):
+        if path.name == "b.py":
+            raise RuntimeError("cannot read")
+        return original_analyze(project_path, path, include_snippet=include_snippet)
+
+    monkeypatch.setattr(codebase_map, "MAX_FILES", 5)
+    monkeypatch.setattr(codebase_map, "analyze_file", flaky_analyze)
+
+    built = codebase_map.build_codebase_map(tmp_path)
+
+    assert built["ok"] is True
+    assert built["file_count"] == 2
+    assert any(item.get("error") == "cannot read" for item in built["files"])

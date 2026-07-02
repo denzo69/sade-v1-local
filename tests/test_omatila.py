@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.persona_layer import _clean_next_steps, _status_emoji, build_persona_frame, render_introspection_reply
 from app.introspection import build_introspection_report
-from app.tool_router import route_tool_request
+from app.tool_router import _format_omatila_reply, route_tool_request
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -49,3 +49,27 @@ def test_tool_router_omatila_uses_clean_persona_report() -> None:
     assert "# Self-State" in result["reply"]
     assert "Truth boundary" in result["reply"]
     assert "Seuraava suositeltu turvakerros on audit_log v1" not in result["reply"]
+
+
+def test_tool_router_self_state_fallback_formats_missing_items() -> None:
+    reply = _format_omatila_reply({
+        "project_root": "masked-root",
+        "documents": [
+            {"id": "project_inventory", "status": "active", "active_path": "docs/project_inventory.md"},
+            {"id": "missing_policy", "status": "missing", "note": "not found"},
+        ],
+        "modules": [
+            {"id": "main", "status": "implemented_candidate", "note": "available", "referenced_by": ["README"]},
+            {"id": "source_reader", "status": "missing", "note": "planned"},
+        ],
+        "verified_capabilities": ["read_only_project_status_report"],
+        "limitations": ["No writes are performed."],
+        "next_steps": ["Add health dashboard."],
+    })
+
+    assert "# Self-State — Local AI Workspace" in reply
+    assert "Active or fallback-discovered documents: 1 / 2" in reply
+    assert "Missing documents:" in reply
+    assert "`source_reader` — missing" in reply
+    assert "References: README." in reply
+    assert "Missing modules are not presented as implemented" in reply
