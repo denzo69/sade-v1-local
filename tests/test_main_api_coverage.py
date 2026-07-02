@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -173,14 +174,24 @@ def test_status_and_safe_api_routes_with_auth(isolated_main: Path, monkeypatch: 
     monkeypatch.setattr(main, "rag_status", lambda path: {"ok": True, "version": "test"})
     monkeypatch.setattr(main, "model_provider_status", lambda config: {"ok": True, "provider": "test"})
     monkeypatch.setattr(main, "run_static_evals", lambda path: {"ok": True, "passed": 1, "total": 1})
+    monkeypatch.setattr(main, "run_live_evals", lambda config, max_cases=3: {"ok": True, "passed": max_cases, "total": max_cases})
     monkeypatch.setattr(main, "read_traces", lambda path, limit=50: {"ok": True, "items": [], "limit": limit})
     monkeypatch.setattr(main, "list_memory_entries", lambda path, limit=100: {"ok": True, "items": [], "limit": limit})
     monkeypatch.setattr(main, "export_memory_json", lambda path: {"ok": True, "items": []})
     monkeypatch.setattr(main, "delete_memory_entry", lambda path, entry_id, confirmation: {"ok": False, "message": "confirmation required"})
+    monkeypatch.setattr(main, "get_task_queue_status", lambda path: {"ok": True, "queued": 0})
+    monkeypatch.setattr(main, "get_learning_review_status", lambda path: {"ok": True, "reviews_count": 0})
+    monkeypatch.setattr(main, "get_learning_status", lambda path: {"ok": True, "pending_files": 0})
+    monkeypatch.setattr(main, "get_tools_status", lambda path: {"ok": True, "tools": []})
+    monkeypatch.setattr(main, "audit_status", lambda path: {"valid": True, "count": 0, "last_event_at": None})
+    monkeypatch.setattr(main, "_audit", lambda *a, **k: None)
 
     client, headers = authenticated_client(isolated_main)
 
     assert client.get("/health").json()["ok"] is True
+    raw_status = client.get("/system/status").json()
+    assert raw_status["server"] == "running"
+    assert raw_status["semantic_memory"]["enabled"] is False
     health_summary = client.get("/health/summary").json()
     assert health_summary["mode"] == "sanitized_health_summary"
     assert health_summary["privacy"]["local_paths_hidden"] is True
@@ -192,10 +203,59 @@ def test_status_and_safe_api_routes_with_auth(isolated_main: Path, monkeypatch: 
     assert client.get("/web-search/status").json()["enabled"] is True
     assert client.get("/rag/status").json()["version"] == "test"
     assert client.get("/evals/static").json()["passed"] == 1
+    assert client.post("/evals/live?max_cases=2", headers=headers).json()["passed"] == 2
     assert client.get("/debug/trace").json()["items"] == []
     assert client.get("/memory/entries").json()["items"] == []
     assert client.post("/memory/export", headers=headers).json()["ok"] is True
     assert client.post("/memory/delete-entry", json={"entry_id": "x", "confirmation": "no"}, headers=headers).json()["ok"] is False
+
+    client.close()
+
+
+def test_upload_validation_and_duplicate_filename_paths(isolated_main: Path) -> None:
+    class NamelessUpload:
+        filename = ""
+        async def read(self):
+            return b"hello"
+
+    with pytest.raises(HTTPException) as missing_exc:
+        asyncio.run(main.upload_file(NamelessUpload()))
+    assert missing_exc.value.status_code == 400
+
+    client, headers = authenticated_client(isolated_main)
+
+    invalid_ext = client.post(
+        "/files/upload",
+        files={"file": ("tool.exe", b"hello", "application/octet-stream")},
+        headers=headers,
+    )
+    empty_file = client.post(
+        "/files/upload",
+        files={"file": ("empty.txt", b"", "text/plain")},
+        headers=headers,
+    )
+    binary_file = client.post(
+        "/files/upload",
+        files={"file": ("binary.txt", b"\xff\xfe\x00", "text/plain")},
+        headers=headers,
+    )
+    first = client.post(
+        "/files/upload",
+        files={"file": ("note.txt", b"hello", "text/plain")},
+        headers=headers,
+    )
+    duplicate = client.post(
+        "/files/upload",
+        files={"file": ("note.txt", b"again", "text/plain")},
+        headers=headers,
+    )
+
+    assert invalid_ext.status_code == 400
+    assert empty_file.status_code == 400
+    assert binary_file.status_code == 400
+    assert first.status_code == 200
+    assert duplicate.status_code == 200
+    assert duplicate.json()["filename"] == "note_1.txt"
 
     client.close()
 
@@ -223,6 +283,7 @@ def test_router_rag_semantic_and_security_api_routes(isolated_main: Path, monkey
     assert analysis["risk"] in {"low", "medium", "high"}
 
     assert client.post("/tools/router/preview", json={"message": ""}, headers=headers).status_code == 400
+    assert client.post("/tools/router/run", json={"message": ""}, headers=headers).status_code == 400
     assert client.post("/rag/search", json={"query": ""}, headers=headers).status_code == 400
     assert client.get("/rag/search?q=").status_code in {400, 403}
 

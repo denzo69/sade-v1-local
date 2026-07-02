@@ -2,6 +2,22 @@
 
 All notable changes to Local AI Workspace are documented here.
 
+## [0.1.8-coverage-hardening] - 2026-07-02
+
+### Added
+
+- Added targeted tests for upload validation, duplicate upload naming, raw system status, live eval API routing, empty tool-router requests, and memory-cleaner status/preview routing.
+
+### Changed
+
+- Removed an obsolete duplicate `build_codebase_map` implementation that had been superseded by the safer builder.
+- Updated the public Quickstart clone path to the current `local-ai-workspace` repository name.
+
+### Testing
+
+- Local test status: `173 passed`.
+- Total coverage: `88%`.
+
 ## [0.1.7-coverage-hardening] - 2026-07-02
 
 ### Added

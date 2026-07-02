@@ -625,6 +625,41 @@ def test_tool_router_error_and_preview_paths(tmp_path: Path, monkeypatch: pytest
     assert tool_router.route_tool_preview("ordinary message")["would_route"] is False
 
 
+def test_tool_router_memory_cleaner_status_and_preview_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    (app_dir / "memory_cleaner.py").write_text("# cleaner", encoding="utf-8")
+
+    status = tool_router._build_memory_cleaner_status_reply(app_dir)
+    assert status["handled"] is True
+    assert status["tool"] == "memory_cleaner_status"
+    assert status["result"]["memory_cleaner_file_exists"] is True
+    assert status["result"]["automatic_deletion_active"] is False
+    assert "60" in status["reply"]
+
+    missing_status = tool_router._build_memory_cleaner_status_reply(tmp_path / "missing-app")
+    assert missing_status["result"]["memory_cleaner_file_exists"] is False
+
+    assert tool_router._is_memory_cleaner_status_request("onko 60 päivän muistienpoisto aktiivinen") is True
+    assert tool_router.route_tool_preview("memory cleaner status")["tool"] == "memory_cleaner_status"
+
+    monkeypatch.setattr(
+        "app.memory_cleaner.plan_memory_cleanup",
+        lambda path: {"ok": True, "candidate_count": 3, "candidates": [{"id": "x"}]},
+    )
+    preview = tool_router.route_tool_request(tmp_path, "memory cleaner status")
+    assert preview["tool"] == "memory_cleaner_preview"
+    assert "3" in preview["reply"]
+
+    monkeypatch.setattr(
+        "app.memory_cleaner.plan_memory_cleanup",
+        lambda path: {"ok": False, "error": "no vector db"},
+    )
+    failed_preview = tool_router.route_tool_request(tmp_path, "memory cleaner status")
+    assert failed_preview["tool"] == "memory_cleaner_preview"
+    assert "no vector db" in failed_preview["reply"]
+
+
 def test_live_evals_success_and_provider_error(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeResponse:
         provider = "unit"

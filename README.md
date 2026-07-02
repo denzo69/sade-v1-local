@@ -79,8 +79,8 @@ More screenshot notes: [docs/screenshots/README.md](docs/screenshots/README.md).
 ## Quickstart
 
 ```powershell
-git clone https://github.com/denzo69/sade-v1-local.git
-cd sade-v1-local
+git clone https://github.com/denzo69/local-ai-workspace.git
+cd local-ai-workspace
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\app\create_sade_user.bat
 .\app\restart_local_ai_workspace.bat
@@ -103,8 +103,8 @@ More detail: [QUICKSTART.md](QUICKSTART.md)
 Current local status:
 
 ```text
-171 passed locally
-coverage: 87% total, with targeted hardening around auth/session safety, project health reporting, RAG, web search, automatic factual/recipe search, model provider fallback, tool routing, API routes, and live eval entrypoints
+173 passed locally
+coverage: 88% total, with targeted hardening around auth/session safety, project health reporting, upload validation, RAG, web search, automatic factual/recipe search, model provider fallback, tool routing, API routes, live eval entrypoints, and dead-code cleanup
 GitHub Actions: passing
 ```
 
